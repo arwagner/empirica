@@ -1,0 +1,36 @@
+.notebook {
+  --nb-bg: #fbf9f4; --nb-fg: #1d2a2e; --nb-muted: #5f6b6e; --nb-line: #0000001a; --nb-accent: #2f7d6d;
+  --nb-grid: #00000012;
+  display: flex; flex-direction: column; gap: 14px; padding: 16px; background: var(--nb-bg); color: var(--nb-fg);
+  font: 14px/1.45 system-ui, sans-serif; max-height: 100%; overflow: auto; box-sizing: border-box;
+}
+@media (prefers-color-scheme: dark) {
+  .notebook { --nb-bg: #172023; --nb-fg: #e8e4da; --nb-muted: #9aa5a7; --nb-line: #ffffff1f; --nb-accent: #5cc2aa; --nb-grid: #ffffff14; }
+}
+.notebook header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.notebook h2 { margin: 0; font-size: 18px; color: var(--nb-accent); }
+.notebook button { padding: 6px 10px; border-radius: 7px; border: 1px solid var(--nb-line); background: transparent; color: inherit; cursor: pointer; font: inherit; }
+.notebook button:disabled { opacity: .45; cursor: default; }
+.notebook button.link { border: 0; padding: 0; color: var(--nb-accent); font-size: 12px; }
+.notebook .exports { display: flex; gap: 6px; }
+.notebook .charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.notebook .series { margin: 0; padding: 10px 12px; border: 1px solid var(--nb-line); border-radius: 10px; }
+.notebook figcaption { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 4px; }
+.notebook .plot { position: relative; }
+.notebook svg { display: block; width: 100%; overflow: visible; }
+.notebook .grid { stroke: var(--nb-grid); }
+.notebook .tick { fill: var(--nb-muted); font-size: 10px; }
+.notebook .line { fill: none; stroke: var(--nb-accent); stroke-width: 2; stroke-linejoin: round; }
+.notebook .dot { fill: var(--nb-accent); stroke: var(--nb-bg); stroke-width: 2; }
+.notebook .crosshair { stroke: var(--nb-muted); stroke-dasharray: 2 3; }
+.notebook .tip { position: absolute; top: -6px; transform: translate(-50%, -100%); padding: 3px 8px; border-radius: 6px; background: var(--nb-fg); color: var(--nb-bg); font-size: 12px; white-space: nowrap; pointer-events: none; }
+.notebook table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.notebook th, .notebook td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--nb-line); }
+.notebook .log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.notebook .log li { display: grid; grid-template-columns: 44px 22px 1fr; gap: 6px; padding: 4px 0; border-bottom: 1px solid var(--nb-line); }
+.notebook .log time { color: var(--nb-muted); font: 12px ui-monospace, monospace; padding-top: 2px; }
+.notebook .log li.note .text { font-style: italic; }
+.notebook .empty { color: var(--nb-muted); margin: 0; }
+.notebook .note { display: flex; gap: 6px; }
+.notebook .note input { flex: 1; min-width: 0; padding: 7px 10px; border-radius: 7px; border: 1px solid var(--nb-line); background: transparent; color: inherit; font: inherit; }
+.notebook .muted { color: var(--nb-muted); font-weight: 400; }

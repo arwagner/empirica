@@ -1,0 +1,47 @@
+:root {
+  --ui-bg: #f6f3ec; --ui-panel: #fbf9f4; --ui-fg: #1d2a2e; --ui-muted: #5f6b6e; --ui-line: #0000001a;
+  --ui-accent: #2f7d6d; --ui-accent-fg: #fff; --ui-chip: #2f7d6d1a;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --ui-bg: #131a1c; --ui-panel: #172023; --ui-fg: #e8e4da; --ui-muted: #9aa5a7; --ui-line: #ffffff1f; --ui-accent: #5cc2aa; --ui-accent-fg: #0d1416; --ui-chip: #5cc2aa22; }
+}
+.menu-veil, .station { font: 14px/1.45 system-ui, sans-serif; }
+.menu-veil kbd, .station kbd { display: inline-block; padding: 0 5px; margin-left: 6px; border-radius: 4px; border: 1px solid var(--ui-line); font: 11px ui-monospace, monospace; color: var(--ui-muted); }
+.menu-veil button, .station button, .menu-veil select, .menu-veil input { font: inherit; color: inherit; }
+
+.menu-veil { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px 16px; background: #1d2a2e66; backdrop-filter: blur(4px); }
+.menu { display: flex; flex-direction: column; width: min(980px, 100%); height: min(720px, 100%); background: var(--ui-bg); color: var(--ui-fg); border-radius: 16px; box-shadow: 0 24px 80px #0005; overflow: hidden; }
+.menu > header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; border-bottom: 1px solid var(--ui-line); }
+.menu nav { display: flex; gap: 4px; flex: 1; }
+.menu nav button { padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; cursor: pointer; font-weight: 600; color: var(--ui-muted); }
+.menu nav button.on { background: var(--ui-chip); color: var(--ui-accent); }
+.menu .close { border: 0; background: transparent; cursor: pointer; padding: 6px 8px; }
+.menu-body { flex: 1; min-height: 0; overflow: auto; }
+.menu-body .notebook { height: 100%; background: transparent; }
+
+.level-toggle { display: inline-flex; padding: 2px; border-radius: 999px; border: 1px solid var(--ui-line); }
+.level-toggle button { padding: 4px 10px; border: 0; border-radius: 999px; background: transparent; cursor: pointer; font-size: 12px; color: var(--ui-muted); }
+.level-toggle button.on { background: var(--ui-accent); color: var(--ui-accent-fg); }
+
+.catalog { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.filters input { flex: 1 1 220px; }
+.filters input, .filters select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--ui-line); background: var(--ui-panel); }
+.catalog .empty { color: var(--ui-muted); margin: 24px 0; text-align: center; }
+.cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.card-exp { display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 12px; background: var(--ui-panel); border: 1px solid var(--ui-line); }
+.card-exp h3 { margin: 0; font-size: 16px; }
+.card-exp p { margin: 0; color: var(--ui-muted); flex: 1; }
+.card-exp .meta, .card-exp .topics { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--ui-muted); }
+.chip { padding: 1px 8px; border-radius: 999px; background: var(--ui-chip); color: var(--ui-accent); font-weight: 600; }
+.card-exp button, .stations-list button { align-self: flex-start; padding: 6px 14px; border: 0; border-radius: 999px; background: var(--ui-accent); color: var(--ui-accent-fg); cursor: pointer; font-weight: 600; }
+
+.stations-list { padding: 16px; display: flex; flex-direction: column; gap: 18px; }
+.stations-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.stations-list .room-name { margin: 0 0 8px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ui-accent); }
+.stations-list .soon { font-size: 12px; color: var(--ui-muted); white-space: nowrap; }
+.stations-list li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px; border-radius: 12px; background: var(--ui-panel); border: 1px solid var(--ui-line); }
+.stations-list h3 { margin: 0 0 2px; font-size: 16px; }
+.stations-list p { margin: 0; color: var(--ui-muted); }
+
+.station-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }

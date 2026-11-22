@@ -1,0 +1,3 @@
+.why { display: contents; }
+.why-btn { margin-left: 6px; padding: 0 8px !important; border-radius: 999px !important; font-size: 11px !important; line-height: 18px; border: 1px solid var(--ui-accent, #2f7d6d) !important; color: var(--ui-accent, #2f7d6d) !important; background: transparent !important; cursor: pointer; vertical-align: 1px; }
+.why-text { display: block; margin-top: 6px; padding: 8px 10px; border-radius: 8px; background: var(--ui-chip, #2f7d6d14); color: var(--ui-fg, #1d2a2e); font-size: 13px; line-height: 1.5; font-style: normal; }

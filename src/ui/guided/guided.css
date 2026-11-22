@@ -1,0 +1,21 @@
+.guided { display: flex; flex-direction: column; gap: 12px; padding: 16px; width: min(360px, 100%); box-sizing: border-box; background: var(--ui-panel, #fbf9f4); color: var(--ui-fg, #1d2a2e); border-left: 1px solid var(--ui-line, #0001); overflow: auto; font: 14px/1.5 system-ui, sans-serif; }
+.guided header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.guided h3 { margin: 0; font-size: 17px; }
+.guided h4 { margin: 8px 0 4px; }
+.guided .eyebrow { margin: 0; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ui-accent, #2f7d6d); font-weight: 700; }
+.guided .link { border: 0; background: none; color: var(--ui-accent, #2f7d6d); cursor: pointer; padding: 0; font: inherit; }
+.guided progress { width: 100%; height: 6px; accent-color: var(--ui-accent, #2f7d6d); }
+.guided p { margin: 0; }
+.guided .intro, .guided .muted { color: var(--ui-muted, #5f6b6e); }
+.guided .hazards { padding: 8px 10px; border-radius: 8px; background: #f5a62322; color: inherit; font-size: 13px; }
+.guided .result { padding: 10px 12px; border-radius: 10px; background: var(--ui-chip, #2f7d6d1a); display: flex; flex-direction: column; gap: 6px; }
+.guided .observed { font-weight: 600; color: var(--ui-accent, #2f7d6d); }
+.guided .steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.guided .steps .done { color: var(--ui-muted, #5f6b6e); text-decoration: line-through; }
+.guided .steps .now { font-weight: 600; }
+.guided .steps .later { color: var(--ui-muted, #5f6b6e); }
+.guided .actions, .guided .summary { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.guided .summary { flex-direction: column; align-items: stretch; }
+.guided .hint { flex-basis: 100%; padding: 8px 10px; border-radius: 8px; background: #ffd25a2e; }
+.guided .actions button, .guided .summary button { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--ui-line, #0002); background: transparent; color: inherit; cursor: pointer; font: inherit; }
+.guided .summary button { align-self: flex-start; background: var(--ui-accent, #2f7d6d); color: var(--ui-accent-fg, #fff); border: 0; }
