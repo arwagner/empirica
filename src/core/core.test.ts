@@ -53,3 +53,12 @@ describe('runProcedure', () => {
     expect(runProcedure(marbles(), exp)).toMatchObject({ ok: false, failedStep: 1 })
   })
 })
+
+import { z } from 'zod'
+import { settableShape } from '.'
+test('settableShape: partial settings never pick up defaults', () => {
+  const params = z.object({ a: z.number().default(1), b: z.string().default('x'), c: z.boolean() })
+  const set = z.object({ type: z.literal('set') }).extend(settableShape(params))
+  expect(set.parse({ type: 'set', a: 5 })).toEqual({ type: 'set', a: 5 })
+  expect(z.object({ type: z.literal('set') }).extend(params.partial().shape).parse({ type: 'set', a: 5 })).toHaveProperty('b', 'x') // the trap
+})
