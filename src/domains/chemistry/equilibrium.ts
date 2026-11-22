@@ -4,8 +4,8 @@ import { IMPLICIT_IONS, PRECIPITATES, SPECIES, species, type Species } from './s
 export type Contents = Record<string, number>
 
 export const KW = 1e-14
-const KA_ACETIC = 1.8e-5
-const KA_NH4 = 5.6e-10
+export const KA_ACETIC = 1.8e-5
+export const KA_NH4 = 5.6e-10
 const K1_CO2 = 4.3e-7
 const K2_CO2 = 4.7e-11
 /**

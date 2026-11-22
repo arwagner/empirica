@@ -81,6 +81,11 @@ const INDICATOR_DYES: Record<string, { dye: Indicator; weight: number }[]> = {
 
 export const SPECTRUM_SPECIES = new Set([...Object.keys(IONS), ...Object.keys(INDICATOR_DYES)])
 
+/** Every form of an indicator's dyes at this pH: its name, share of its dye, and that dye's weight in the mix. */
+export function dyeForms(id: string, ph: number): { name: string; share: number; weight: number }[] {
+  return (INDICATOR_DYES[id] ?? []).flatMap(({ dye, weight }) => formFractions(dye, ph).map((share, k) => ({ name: dye.forms[k].name, share, weight })))
+}
+
 /** Fraction of an indicator in each form at this pH (polyprotic speciation). */
 export function formFractions(ind: Indicator, ph: number): number[] {
   // log of the relative amount of form k: k·pH − Σ pKa(i ≤ k)

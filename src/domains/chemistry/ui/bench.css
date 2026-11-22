@@ -83,3 +83,9 @@
 .spectrum .parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
 .spectrum .parts li { display: flex; gap: 6px; align-items: baseline; }
 .spectrum .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--ui-line, #0002); }
+.spectrum svg .thin { stroke-width: 1.2; }
+.spectrum svg .grid-tick { stroke: var(--ui-muted, #5f6b6e); }
+.spectrum svg .stick { stroke: var(--ui-accent, #2f7d6d); stroke-width: 2; }
+.spectrum svg .mz { fill: var(--ui-fg, #1d2a2e); }
+.spectrum .ppm { flex: none; min-width: 52px; font: 600 12px ui-monospace, monospace; }
+.spectrum .note { display: block; font-size: 12px; color: var(--ui-muted, #5f6b6e); }

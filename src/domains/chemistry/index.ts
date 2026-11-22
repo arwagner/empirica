@@ -18,6 +18,8 @@ const EQUIPMENT: Equipment[] = [
   { id: 'balance', name: 'Balance', measures: ['mass'] },
   { id: 'gas-syringe', name: 'Gas syringe', measures: ['gas volume'] },
   { id: 'spectrometer', name: 'UV-visible spectrometer', description: 'Shines light from 350 to 900 nm through a 1 cm cuvette of the sample and measures how much of each wavelength is absorbed.', measures: ['peak absorbance'] },
+  { id: 'nmr', name: '¹H NMR spectrometer (400 MHz)', description: 'Shows each hydrogen-bearing molecule as lines at characteristic positions; line areas count hydrogens, so they measure how much of each form is present.', measures: [] },
+  { id: 'mass-spectrometer', name: 'Electrospray mass spectrometer', description: 'Sprays dissolved ions into a vacuum and sorts them by mass-to-charge ratio, showing isotope patterns.', measures: [] },
   { id: 'splint', name: 'Wooden splints', measures: [] },
   { id: 'wire-loop', name: 'Nichrome wire loop', measures: [] },
   { id: 'filter-funnel', name: 'Filter funnel and paper', measures: [] },

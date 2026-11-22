@@ -219,6 +219,8 @@ export const redCabbage: ChemExperiment = {
   variations: [
     { prompt: 'Test baking soda solution, ammonia and limewater. Where do they fit in the rainbow?' },
     { prompt: 'Compare with universal indicator from the shelf.' },
+    { prompt: 'Run NMR on tube 3 and tube 1. The line integrals show what share of the pigment is in each form; compare with the colors.' },
+    { prompt: 'Run the mass spectrometer on any tube. How many different pigments does red cabbage hold, and what do they share?' },
     { prompt: 'Select each tube and open the spectrometer. Watch the absorption peak move as the pH rises, and see which form of the pigment is doing the absorbing.' },
   ],
 }

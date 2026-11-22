@@ -7,12 +7,16 @@ import { chemistryEngine, VESSEL_KINDS, type ChemState } from '../engine'
 import type { ChemAction, VesselKind } from '../schemas'
 import { Glassware } from './Glassware'
 import { Shelf } from './Shelf'
+import { MassSpecPanel } from './MassSpecPanel'
+import { NmrPanel } from './NmrPanel'
 import { SpectrumPanel } from './SpectrumPanel'
 import './bench.css'
 
 const HEAT = [['Off', 0], ['Low', 150], ['Medium', 300], ['High', 600], ['Bunsen', 1000]] as const
 const SPEEDS = [1, 10, 60] as const
 const TICK_MS = 250
+const ANALYZERS = [['uv-vis', 'UV-Vis'], ['nmr', 'NMR'], ['ms', 'Mass spec']] as const
+type Analyzer = (typeof ANALYZERS)[number][0]
 const INSTRUMENTS = [['thermometer', 'Thermometer'], ['ph-meter', 'pH meter'], ['balance', 'Balance'], ['gas-syringe', 'Gas syringe'], ['spectrometer', 'Spectrometer peak']] as const
 const SHORT: Record<VesselKind, string> = {
   'beaker-250': 'beaker', 'beaker-100': 'small beaker', 'flask-250': 'flask', 'test-tube': 'test tube',
@@ -44,7 +48,7 @@ export function ChemBench({ sandbox, apply: rawApply }: BenchProps) {
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(10)
   const [pourTo, setPourTo] = useState('')
   const [pourAmt, setPourAmt] = useState<number | 'all'>('all')
-  const [showSpectrum, setShowSpectrum] = useState(false)
+  const [analyzer, setAnalyzer] = useState<Analyzer | null>(null)
 
   // Fizz for a few seconds whenever an action makes a vessel give off gas.
   const [fizzing, setFizzing] = useState<Record<string, boolean>>({})
@@ -152,9 +156,16 @@ export function ChemBench({ sandbox, apply: rawApply }: BenchProps) {
               })}
             </div>
             <div className="row">
-              <button onClick={() => setShowSpectrum((x) => !x)} aria-expanded={showSpectrum}>{showSpectrum ? 'Hide spectrum' : 'Show spectrum'}</button>
+              <span className="lbl">Analyze</span>
+              <div className="seg" role="group" aria-label="Analyze the sample">
+                {ANALYZERS.map(([id, name]) => (
+                  <button key={id} aria-pressed={analyzer === id} className={analyzer === id ? 'on' : ''} onClick={() => setAnalyzer((a) => (a === id ? null : id))}>{name}</button>
+                ))}
+              </div>
             </div>
-            {showSpectrum && <SpectrumPanel vessel={selected} contents={v.contents} />}
+            {analyzer === 'uv-vis' && <SpectrumPanel vessel={selected} contents={v.contents} />}
+            {analyzer === 'nmr' && <NmrPanel vessel={selected} contents={v.contents} />}
+            {analyzer === 'ms' && <MassSpecPanel vessel={selected} contents={v.contents} />}
 
             <div className="row">
               <span className="lbl">Heat</span>
