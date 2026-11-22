@@ -15,7 +15,10 @@ const K2_CO2 = 4.7e-11
 export const CO2_SOLUBILITY = 0.002
 const EPS = 1e-12
 
-export const waterLitres = (c: Contents) => ((c.H2O ?? 0) * 18.015) / 1000
+/** Density of water at room temperature, g/mL. */
+export const WATER_G_PER_ML = 0.997
+export const waterMol = (mL: number) => (mL * WATER_G_PER_ML) / 18.015
+export const waterLitres = (c: Contents) => (c.H2O ?? 0) * 18.015 / WATER_G_PER_ML / 1000
 export const hasWater = (c: Contents) => waterLitres(c) > 1e-4
 
 /** Fractions of the carbonate total as H2CO3*, HCO3-, CO3^2- at a given [H+]. */

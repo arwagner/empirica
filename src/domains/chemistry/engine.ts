@@ -1,7 +1,7 @@
 import type { Engine, LabEvent, Measurement } from '../../core'
 import { flameColor, solutionColor, visibleSolid } from './appearance'
 import {
-  addIons, asDissolved, hasWater, pH, precipitate, releaseCO2, solveUpTo, titratableAcidity, waterLitres, type Contents,
+  addIons, asDissolved, hasWater, pH, precipitate, releaseCO2, solveUpTo, titratableAcidity, waterLitres, waterMol, type Contents,
 } from './equilibrium'
 import { DROP_ML, INDICATOR_MOL_PER_DROP, reagent } from './reagents'
 import type { ChemAction, ChemCheck, ChemSetup, VesselKind } from './schemas'
@@ -290,7 +290,7 @@ function contentsOf(reagentId: string, amount: number): { contents: Contents; te
   const r = reagent(reagentId)
   const c: Contents = {}
   if (r.kind === 'liquid' || r.kind === 'solution') {
-    c.H2O = (amount * 0.997) / 18.015
+    c.H2O = waterMol(amount)
     // Bottled solutions are already dissolved: add ions directly so no heat of solution is counted.
     const dissolve = (id: string, molarity: number) => {
       const s = species(id)
@@ -303,7 +303,7 @@ function contentsOf(reagentId: string, amount: number): { contents: Contents; te
     return { contents: c, text: `${amount} mL of ${r.name}` }
   }
   if (r.kind === 'indicator') {
-    c.H2O = (amount * DROP_ML) / 18.015
+    c.H2O = waterMol(amount * DROP_ML)
     c[r.species] = amount * INDICATOR_MOL_PER_DROP
     return { contents: c, text: `${amount} drop${amount === 1 ? '' : 's'} of ${r.name.toLowerCase()}` }
   }
