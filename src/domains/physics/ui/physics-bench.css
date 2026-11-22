@@ -1,0 +1,86 @@
+.phys-bench { --track: #8a6a4d; --cart: #2f7d6d; --gate: #c0392b; display: flex; flex-direction: column; gap: 12px; width: 100%; height: 100%; min-height: 0; font: 14px/1.4 system-ui, sans-serif; color: var(--ui-fg, #1d2a2e); }
+.phys-bench button, .phys-bench select, .phys-bench input { font: inherit; color: inherit; }
+.phys-bench button { padding: 5px 12px; border-radius: 7px; border: 1px solid var(--ui-line, #0002); background: var(--ui-panel, #fff); cursor: pointer; }
+.phys-bench button:disabled { opacity: .45; cursor: default; }
+.phys-bench button.primary { background: var(--ui-accent, #2f7d6d); color: var(--ui-accent-fg, #fff); border-color: transparent; font-weight: 600; }
+.phys-bench select { padding: 4px 8px; border-radius: 7px; border: 1px solid var(--ui-line, #0002); background: var(--ui-panel, #fff); }
+.phys-bench .stage { flex: 1; min-height: 220px; display: grid; place-items: center; border-radius: 12px; background: var(--ui-panel, #fbf9f4); border: 1px solid var(--ui-line, #0001); }
+.phys-bench .stage svg { width: 100%; max-height: 100%; touch-action: none; user-select: none; }
+.phys-bench .floor { stroke: var(--ui-muted, #5f6b6e); stroke-width: 3; }
+.phys-bench .ramp { fill: #c9a77c; stroke: var(--track); stroke-width: 3; stroke-linejoin: round; }
+.phys-bench .arc { fill: none; stroke: var(--ui-muted, #5f6b6e); stroke-width: 1.5; }
+.phys-bench .angle-label { font-size: 15px; fill: var(--ui-fg, #1d2a2e); }
+.phys-bench .stop { fill: #555; }
+.phys-bench .gate { cursor: grab; }
+.phys-bench .gate .post { stroke: #555; stroke-width: 4; }
+.phys-bench .gate .head { fill: #333; }
+.phys-bench .gate .beam { stroke: var(--gate); stroke-width: 2; stroke-dasharray: 3 3; opacity: .7; }
+.phys-bench .gate.tripped .head { fill: var(--gate); }
+.phys-bench .gate-label { font: 600 13px system-ui; text-anchor: middle; fill: var(--ui-fg, #1d2a2e); }
+.phys-bench .cart rect:first-child { fill: var(--cart); }
+.phys-bench .cart .masses { fill: #7d7f86; }
+.phys-bench .cart .wheel { fill: #222; }
+.phys-bench .handle { fill: var(--ui-accent, #2f7d6d); stroke: #fff; stroke-width: 3; cursor: grab; }
+.phys-bench .hint { font-size: 12px; fill: var(--ui-muted, #5f6b6e); }
+.phys-bench .controls { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px; background: var(--ui-panel, #fbf9f4); border: 1px solid var(--ui-line, #0001); }
+.phys-bench .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.phys-bench .row label { display: flex; align-items: center; gap: 6px; }
+.phys-bench .seg { display: inline-flex; }
+.phys-bench .seg button { border-radius: 0; margin-left: -1px; }
+.phys-bench .seg button:first-child { border-radius: 7px 0 0 7px; }
+.phys-bench .seg button:last-child { border-radius: 0 7px 7px 0; }
+.phys-bench .seg button.on { background: var(--ui-accent, #2f7d6d); color: var(--ui-accent-fg, #fff); }
+.phys-bench .clock { font: 600 15px ui-monospace, monospace; }
+.phys-bench .readouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.phys-bench .readout { display: grid; grid-template-columns: 1fr auto; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--ui-line, #0001); }
+.phys-bench .readout .lbl { font-size: 12px; color: var(--ui-muted, #5f6b6e); grid-column: 1; }
+.phys-bench .readout .val { font: 600 17px ui-monospace, monospace; grid-column: 1; }
+.phys-bench .readout .sub { font-size: 12px; color: var(--ui-muted, #5f6b6e); grid-column: 1; }
+.phys-bench .readout button { grid-column: 2; grid-row: 1 / span 3; align-self: center; padding: 2px 8px; font-size: 12px; }
+.phys-bench .mini-graph { margin: 0; padding: 4px; border-radius: 8px; border: 1px solid var(--ui-line, #0001); }
+.phys-bench .mini-graph .axis { stroke: var(--ui-muted, #5f6b6e); stroke-width: 1; }
+.phys-bench .mini-graph .trace { fill: none; stroke: var(--ui-accent, #2f7d6d); stroke-width: 2; }
+.phys-bench .mini-graph .ax-label { font-size: 8px; fill: var(--ui-muted, #5f6b6e); }
+.phys-bench .pulley .string { stroke: #444; stroke-width: 1.5; }
+.phys-bench .pulley .bracket { stroke: #555; stroke-width: 4; }
+.phys-bench .pulley .wheel-p { fill: #ccc; stroke: #555; stroke-width: 3; }
+.phys-bench .pulley .weight { fill: #7d7f86; stroke: #444; }
+.phys-bench .graph-tabs { display: flex; gap: 4px; margin-bottom: 2px; }
+.phys-bench .graph-tabs button { padding: 0 6px; font-size: 11px; border-radius: 999px; }
+.phys-bench .graph-tabs button.on { background: var(--ui-accent, #2f7d6d); color: var(--ui-accent-fg, #fff); border-color: transparent; }
+.phys-bench .weight-label { font: 600 13px system-ui; fill: var(--ui-fg, #1d2a2e); }
+.phys-bench .rail { fill: #b8c0c4; stroke: #8d969b; }
+.phys-bench .tick { stroke: var(--ui-muted, #5f6b6e); stroke-width: 1; }
+.phys-bench .scale { font-size: 11px; text-anchor: middle; fill: var(--ui-muted, #5f6b6e); }
+.phys-bench .glider { cursor: grab; }
+.phys-bench .glider-label { font: 600 12px system-ui; text-anchor: middle; fill: #fff; pointer-events: none; }
+.phys-bench .velcro { fill: #3a3a3a; }
+.phys-bench .spring { fill: none; stroke: #555; stroke-width: 2.5; }
+.phys-bench .push { cursor: ew-resize; }
+.phys-bench .push line { stroke-width: 4; }
+.phys-bench .mini-graph .trace-multi { fill: none; stroke-width: 2; }
+.phys-bench .string { stroke: #555; stroke-width: 1.5; }
+.phys-bench .pivot { fill: #333; }
+.phys-bench .rest-line { stroke: var(--ui-muted, #5f6b6e); stroke-dasharray: 4 4; stroke-width: 1; }
+.phys-bench .gate-mark { fill: var(--gate); }
+.phys-bench .bob { fill: #c9a227; stroke: #8a6d12; stroke-width: 2; cursor: grab; }
+.phys-bench .bob.weight-bob { fill: #7d7f86; stroke: #444; }
+.phys-bench .spring-coil { fill: none; stroke: #555; stroke-width: 2.5; stroke-linejoin: round; }
+.phys-bench .ruler rect { fill: #f2e4b8; stroke: #b39a52; }
+.phys-bench .ruler line { stroke: #6b5a2a; stroke-width: 1; }
+.phys-bench .ruler text { font-size: 10px; fill: var(--ui-fg, #1d2a2e); }
+.phys-bench .target { cursor: ew-resize; }
+.phys-bench .mark { stroke: var(--ui-accent, #2f7d6d); stroke-width: 2; }
+.phys-bench .mark-label { font-size: 10px; text-anchor: middle; fill: var(--ui-accent, #2f7d6d); }
+.phys-bench .trajectory { fill: none; stroke: var(--ui-accent, #2f7d6d); stroke-width: 2; stroke-dasharray: 5 4; }
+.phys-bench .platform { fill: #a8a29a; stroke: #7d776f; }
+.phys-bench .barrel { stroke: #3b4a4f; stroke-width: 12; stroke-linecap: round; }
+.phys-bench .launcher-base { fill: #555; }
+.phys-bench .ball { fill: #444; stroke: #222; }
+.phys-bench table.shots { font-size: 12px; border-collapse: collapse; border: 1px solid var(--ui-line, #0001); border-radius: 8px; }
+.phys-bench table.shots th, .phys-bench table.shots td { padding: 2px 8px; text-align: right; border-bottom: 1px solid var(--ui-line, #0001); }
+.phys-bench table.shots .none { text-align: center; color: var(--ui-muted, #5f6b6e); }
+.phys-bench .tube { fill: #cfe9f033; stroke: #9fc7d2; stroke-width: 3; }
+.phys-bench .tube.vacuum { fill: #1d2a2e14; stroke-dasharray: 8 5; }
+.phys-bench .beam-h { stroke: var(--gate); stroke-width: 1.5; stroke-dasharray: 4 4; opacity: .7; }
+.phys-bench button.on-toggle { background: var(--ui-chip, #2f7d6d1a); border-color: var(--ui-accent, #2f7d6d); }
