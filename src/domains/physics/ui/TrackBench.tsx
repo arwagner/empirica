@@ -5,7 +5,7 @@ import { useLabSession } from '../../../ui/useLabSession'
 import type { PhysicsState } from '../engine'
 import { BUMPERS, GLIDER_W, type Bumper, type TrackState } from '../rigs/track'
 import { PLANETS, type Planet } from '../world'
-import { usePlayback } from './usePlayback'
+import { usePlayback } from '../../../ui/usePlayback'
 import './physics-bench.css'
 
 const W = 900

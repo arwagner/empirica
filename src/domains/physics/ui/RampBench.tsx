@@ -5,7 +5,7 @@ import { useLabSession } from '../../../ui/useLabSession'
 import type { PhysicsState } from '../engine'
 import { SURFACES, type RampState, type Surface } from '../rigs/ramp'
 import { PLANETS, type Planet } from '../world'
-import { usePlayback } from './usePlayback'
+import { usePlayback } from '../../../ui/usePlayback'
 import './physics-bench.css'
 
 // Drawing space: the ramp pivots at its bottom-right foot.
