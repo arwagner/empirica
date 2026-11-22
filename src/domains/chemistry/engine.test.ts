@@ -188,29 +188,49 @@ describe('why explanations come from the engine', () => {
   test('precipitate: names the ions that met and the solubility', () => {
     const r = run(beaker('A', [{ reagent: 'nacl-0.1m', amount: 10 }]), [{ type: 'add', vessel: 'A', reagent: 'agno3-0.1m', amount: 10 }])
     const why = whyOf(r.events, 'precipitate:AgCl')!.why!
-    expect(why.simple).toMatch(/silver ions met chloride ions/)
-    expect(why.simple).toMatch(/ions/)
+    // Anchored to what you did, and gives the reason (attraction), not just the outcome.
+    expect(why.simple).toMatch(/When you added silver nitrate solution, it brought silver ions into a beaker that already had chloride ions/)
+    expect(why.simple).toMatch(/opposite charges attract/)
     expect(why.advanced).toMatch(/Ag⁺ \+ Cl⁻ → AgCl\(s\)/)
     expect(why.advanced).toMatch(/Ksp = 1\.8×10⁻¹⁰/)
   })
 
   test('cold pack: explains the energy balance of dissolving', () => {
     const r = run(beaker('A', [{ reagent: 'water', amount: 100 }]), [{ type: 'add', vessel: 'A', reagent: 'nh4no3', amount: 8 }])
-    expect(whyOf(r.events, 'endothermic')!.why!.simple).toMatch(/soaks up heat/)
+    expect(whyOf(r.events, 'endothermic')!.why!.simple).toMatch(/borrowed from the water's own heat/)
   })
 
   test('neutralization heat and indicator color have their own reasons', () => {
     const r = run(beaker('A', [{ reagent: 'hcl-0.1m', amount: 25 }, { reagent: 'phenolphthalein', amount: 3 }]), [
       { type: 'add', vessel: 'A', reagent: 'naoh-1m', amount: 5 },
     ])
-    expect(whyOf(r.events, 'color-change')!.why!.simple).toMatch(/phenolphthalein is a dye/i)
+    const why = whyOf(r.events, 'color-change')!.why!.simple
+    expect(why).toMatch(/When you added sodium hydroxide solution, you made the liquid alkaline/)
+    expect(why).toMatch(/change shape when they gain or lose hydrogen ions/)
+    const hot = run({ vessels: [{ id: 'cup', kind: 'calorimeter', contents: [{ reagent: 'hcl-1m', amount: 50 }] }] }, [{ type: 'add', vessel: 'cup', reagent: 'naoh-1m', amount: 50 }])
+    expect(whyOf(hot.events, 'exothermic')!.why!.simple).toMatch(/attract each other strongly/)
   })
 
   test('displacement and gas explain which metal won and why', () => {
     const d = run(beaker('A', [{ reagent: 'cuso4-0.5m', amount: 50 }]), [{ type: 'add', vessel: 'A', reagent: 'zn-granules', amount: 5 }])
-    expect(whyOf(d.events, 'deposit:Cu')!.why!.simple).toMatch(/Zinc is a more reactive/)
+    expect(whyOf(d.events, 'deposit:Cu')!.why!.simple).toMatch(/Zinc atoms hold on to their outer electrons less tightly than copper/)
+    expect(whyOf(d.events, 'color-change')!.why!.simple).toMatch(/came from copper\(II\) ions/)
     const g = run(beaker('A', [{ reagent: 'hcl-1m', amount: 20 }]), [{ type: 'add', vessel: 'A', reagent: 'mg-ribbon', amount: 0.1 }])
-    expect(whyOf(g.events, 'gas:H2')!.why!.intermediate).toMatch(/Mg \+ 2H⁺ → Mg²⁺ \+ H₂/)
+    expect(whyOf(g.events, 'gas:H2')!.why!.simple).toMatch(/gives electrons to the hydrogen ions/)
+  })
+
+  test('a why never just restates its observation', async () => {
+    const { registry } = await import('../../content/registry')
+    const { runProcedure } = await import('../../core')
+    for (const { id } of registry.experiments().filter((e) => e.domain === 'chemistry')) {
+      const { domain, experiment } = registry.experiment(id)!
+      for (const e of runProcedure(domain, experiment).events) {
+        if (e.kind !== 'observation' || !e.why) continue
+        // Long enough to carry a reason, and not mostly the same words as the observation.
+        expect(e.why.simple.length, `${id}: ${e.text}`).toBeGreaterThan(120)
+        expect(e.why.simple.startsWith(e.text.slice(0, 25)), `${id}: ${e.text}`).toBe(false)
+      }
+    }
   })
 
   test('every observation in the guided chemistry pack has a why', async () => {

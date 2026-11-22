@@ -7,7 +7,7 @@ import { DROP_ML, INDICATOR_MOL_PER_DROP, reagent } from './reagents'
 import type { ChemAction, ChemCheck, ChemSetup, VesselKind } from './schemas'
 import { SPECIES, species } from './species'
 import {
-  WHY_ALKALI, WHY_BOILING, WHY_MG_BURNS, WHY_DECOMPOSE, WHY_DRY, whyColor, whyDeposit, whyDissolved, whyFlame, whyGas, whyHeat, whyPrecipitate, whySplint, type Cause,
+  WHY_ALKALI, WHY_BOILING, WHY_MG_BURNS, WHY_DECOMPOSE, WHY_DRY, whyColor, whyDeposit, whyDissolved, whyFlame, whyGas, whyHeat, whyPrecipitate, whySplint, type Cause, type WhyContext,
 } from './why'
 import type { Explanation } from '../../core'
 
@@ -93,7 +93,7 @@ const snapshot = (v: Vessel): Snapshot => ({
 const obs = (text: string, ...tags: string[]): LabEvent => ({ kind: 'observation', text, tags })
 const because = (e: LabEvent, why: Explanation): LabEvent => ({ ...e, why } as LabEvent)
 
-function diff(v: Vessel, before: Snapshot, gases: Record<string, number>, causes: Cause[] = []): LabEvent[] {
+function diff(v: Vessel, before: Snapshot, gases: Record<string, number>, causes: Cause[] = [], ctx: WhyContext = {}): LabEvent[] {
   const out: LabEvent[] = []
   const after = snapshot(v)
   for (const [id, n] of Object.entries(after.solids)) {
@@ -101,7 +101,7 @@ function diff(v: Vessel, before: Snapshot, gases: Record<string, number>, causes
     if (!visibleSolid(n, v.contents) || (visibleSolid(was, v.contents) && n - was < n * 0.2)) continue
     const s = species(id)
     if (s.metal) out.push(because(obs(`${s.color!.name[0].toUpperCase()}${s.color!.name.slice(1)} ${s.name} metal forms in the ${v.id}.`, 'deposit', `deposit:${id}`), whyDeposit(s, causes)))
-    else out.push(because(obs(`A ${s.color?.name ?? ''} precipitate of ${s.name} (${s.formula}) forms.`.replace('  ', ' '), 'precipitate', `precipitate:${id}`), whyPrecipitate(s)))
+    else out.push(because(obs(`A ${s.color?.name ?? ''} precipitate of ${s.name} (${s.formula}) forms.`.replace('  ', ' '), 'precipitate', `precipitate:${id}`), whyPrecipitate(s, ctx)))
   }
   for (const [id, n] of Object.entries(before.solids)) {
     if (!visibleSolid(n, v.contents) || visibleSolid(after.solids[id] ?? 0, v.contents)) continue
@@ -117,9 +117,9 @@ function diff(v: Vessel, before: Snapshot, gases: Record<string, number>, causes
   if (Math.abs(dT) >= 1)
     out.push(because(dT > 0
       ? obs(`The ${v.id} gets warmer (+${dT.toFixed(1)} °C).`, 'exothermic')
-      : obs(`The ${v.id} gets colder (${dT.toFixed(1)} °C).`, 'endothermic'), whyHeat(dT, causes)))
+      : obs(`The ${v.id} gets colder (${dT.toFixed(1)} °C).`, 'endothermic'), whyHeat(dT, causes, ctx)))
   if (after.color !== before.color && hasWater(v.contents))
-    out.push(because(obs(after.color === 'colorless' ? 'The solution becomes colorless.' : `The solution turns ${after.color}.`, 'color-change', `color:${after.color}`), whyColor(solutionColor(v.contents), before.color)))
+    out.push(because(obs(after.color === 'colorless' ? 'The solution becomes colorless.' : `The solution turns ${after.color}.`, 'color-change', `color:${after.color}`), whyColor(solutionColor(v.contents), before.color, causes, ctx)))
   return out
 }
 
@@ -231,8 +231,9 @@ function heatOfNeutralization(existing: Contents, added: Contents): number {
 }
 
 /** Combine `added` into vessel, settle, and narrate what changed. */
-function combine(state: ChemState, v: Vessel, added: Contents, addedTempC: number): LabEvent[] {
+function combine(state: ChemState, v: Vessel, added: Contents, addedTempC: number, label?: string): LabEvent[] {
   const priorColor = solutionColor(v.contents).name
+  const ctx: WhyContext = { added: label, addedIds: Object.keys(asDissolved(added)), priorIds: Object.keys(asDissolved(v.contents)) }
   const neutralKJ = heatOfNeutralization(v.contents, added)
   const cAdded = heatCapacity({ ...v, kind: 'test-tube', contents: added }) - VESSEL_KINDS['test-tube'].heatCapacity
   const cHere = heatCapacity(v)
@@ -241,7 +242,7 @@ function combine(state: ChemState, v: Vessel, added: Contents, addedTempC: numbe
   // Solids are compared after adding (so added solids aren't "new"); color against how it looked before.
   const before = { ...snapshot(v), color: priorColor }
   const { gases, notes, causes } = settle(v, neutralKJ)
-  const events = [...notes, ...diff(v, before, gases, causes), ...overflow(v), ...route(state, v, gases)]
+  const events = [...notes, ...diff(v, before, gases, causes, ctx), ...overflow(v), ...route(state, v, gases)]
   return events
 }
 
@@ -276,6 +277,13 @@ function route(state: ChemState, v: Vessel, gases: Record<string, number>): LabE
     }
   }
   return events
+}
+
+/** How to name what was just added, in a sentence. */
+function describeAdded(reagentId: string) {
+  const r = reagent(reagentId)
+  const name = r.name.replace(/^[\d.]+ M /, '').toLowerCase()
+  return r.kind === 'solution' ? `${name} solution`.replace('solution solution', 'solution') : name
 }
 
 function contentsOf(reagentId: string, amount: number): { contents: Contents; text: string } {
@@ -369,7 +377,7 @@ function step(state: ChemState, a: ChemAction): LabEvent[] {
     case 'add': {
       const v = need(state, a.vessel)
       const { contents, text } = contentsOf(a.reagent, a.amount)
-      return [act(`Added ${text} to the ${v.id}.`), ...combine(state, v, contents, state.roomTempC)]
+      return [act(`Added ${text} to the ${v.id}.`), ...combine(state, v, contents, state.roomTempC, describeAdded(a.reagent))]
     }
     case 'pour': {
       const from = need(state, a.from)
@@ -383,7 +391,7 @@ function step(state: ChemState, a: ChemAction): LabEvent[] {
         bump(from.contents, id, -n * f)
       }
       const amountText = a.amount === undefined ? 'everything' : `${a.amount} mL`
-      return [act(`Poured ${amountText} from the ${from.id} into the ${to.id}.`), ...combine(state, to, moved, from.tempC)]
+      return [act(`Poured ${amountText} from the ${from.id} into the ${to.id}.`), ...combine(state, to, moved, from.tempC, `the liquid from the ${from.id}`)]
     }
     case 'filter': {
       const from = need(state, a.from)
@@ -398,7 +406,7 @@ function step(state: ChemState, a: ChemAction): LabEvent[] {
       return [
         act(`Filtered the ${from.id} into the ${to.id}.`),
         ...(left.length ? [obs(`The filter paper holds: ${left.join(', ')}.`, 'residue')] : []),
-        ...combine(state, to, moved, from.tempC),
+        ...combine(state, to, moved, from.tempC, `the filtered liquid from the ${from.id}`),
       ]
     }
     case 'heat': {

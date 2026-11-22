@@ -99,7 +99,7 @@ test('Why? reveals the explanation at the chosen level', () => {
   fireEvent.click(screen.getByRole('button', { name: /Add 10 mL of 0.1 M silver nitrate to beaker A/ }))
   const feed = screen.getByRole('list', { name: 'Latest observations' })
   fireEvent.click(within(feed).getAllByRole('button', { name: 'Why?' })[0])
-  expect(within(feed).getByRole('note')).toHaveTextContent(/silver ions met chloride ions/)
+  expect(within(feed).getByRole('note')).toHaveTextContent(/opposite charges attract/)
 })
 
 test("What's inside? shows the particles in the selected vessel", () => {

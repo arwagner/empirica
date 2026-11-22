@@ -2,6 +2,12 @@ import type { Explanation } from '../../core'
 import { indicatorColor, type SolutionColor } from './appearance'
 import { INDICATORS, SPECIES, species, type Species } from './species'
 
+/**
+ * "Why?" explanations. Rule of thumb: never restate the observation. Say what the particles did
+ * and the reason they did it (attraction between charges, how tightly electrons are held, energy
+ * released or borrowed, unstable molecules falling apart), anchored to what the learner did.
+ */
+
 /** What the engine actually did while settling a vessel: the raw material for "why". */
 export type Cause =
   | { kind: 'dissolve'; species: string; kJ: number }
@@ -12,16 +18,25 @@ export type Cause =
   | { kind: 'acid-metal'; metal: string; kJ: number }
   | { kind: 'carbonate' }
 
+/** What the learner just did, so explanations can talk about *their* experiment. */
+export interface WhyContext {
+  /** e.g. "silver nitrate solution" or "the liquid from beaker B" */
+  added?: string
+  /** Ion/particle ids the addition brought in, and ids already in the vessel before. */
+  addedIds?: string[]
+  priorIds?: string[]
+}
+
 const X = (simple: string, intermediate: string, advanced: string): Explanation => ({ simple, intermediate, advanced })
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1)
+const you = (ctx: WhyContext) => (ctx.added ? `When you added ${ctx.added}, ` : '')
 
 const ION_WORDS: Record<string, { simple: string; formula: string }> = {
   co3: { simple: 'carbonate ions', formula: 'CO₃²⁻' },
-  'OH-': { simple: 'hydroxide ions (from the alkali)', formula: 'OH⁻' },
+  'OH-': { simple: 'hydroxide ions', formula: 'OH⁻' },
   nh3: { simple: 'ammonium ions', formula: 'NH₄⁺' },
   ac: { simple: 'acetate ions', formula: 'CH₃COO⁻' },
 }
-/** "silver ions", with formula, for an ion id in a compound's recipe. */
 function ion(id: string) {
   if (ION_WORDS[id]) return ION_WORDS[id]
   const s = SPECIES[id]
@@ -29,120 +44,223 @@ function ion(id: string) {
 }
 const partners = (s: Species) => Object.keys(s.ions ?? {}).filter((i) => i !== 'H2O' && i !== 'H+')
 const sci = (x: number) => x.toExponential(1).replace(/e([+-])(\d+)/, (_, sign, d) => `×10${sign === '-' ? '⁻' : ''}${[...d].map((c) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+c]).join('')}`)
+const charge = (id: string) => (id === 'OH-' || id === 'co3' || id === 'ac' ? -1 : SPECIES[id]?.charge ?? (id === 'nh3' ? 1 : 0))
 
-export function whyPrecipitate(s: Species): Explanation {
-  const ps = partners(s).map(ion)
-  const [a, b] = ps
-  const eq = `${ps.map((p) => p.formula).join(' + ')} → ${s.formula}(s)`
+// ---------- precipitation ----------
+
+export function whyPrecipitate(s: Species, ctx: WhyContext = {}): Explanation {
+  const ids = partners(s)
+  // Which ion came in with what was just added, and which was already waiting in the beaker?
+  const brought = ids.find((i) => ctx.addedIds?.includes(i) && !ctx.priorIds?.includes(i)) ?? ids[0]
+  const waiting = ids.find((i) => i !== brought) ?? ids[1]
+  const a = ion(brought)
+  const b = ion(waiting)
+  const pos = charge(brought) > 0 ? a : b
+  const neg = charge(brought) > 0 ? b : a
+  const eq = `${ids.map((i) => ion(i).formula).join(' + ')} → ${s.formula}(s)`
+  const story = ctx.added
+    ? `When you added ${ctx.added}, it brought ${a.simple} into a beaker that already had ${b.simple} floating in it.`
+    : `${cap(a.simple)} and ${b.simple} ended up in the same liquid.`
   return X(
-    `Dissolved salts are split into tiny charged pieces called ions, which are invisible. Here, ${a.simple} met ${b.simple}. Together they make ${s.name}, which can hardly dissolve in water at all, so they clump into specks of solid you can see${s.color ? `: ${s.color.name}` : ''}. That solid is called a precipitate.`,
-    `${eq}. ${cap(s.name)} is almost insoluble, so as soon as both ions are in the same solution they pair up and drop out as a solid (a precipitate). Any other ions stay dissolved and just watch: they're "spectator ions".`,
-    `Net ionic equation: ${eq}. Precipitation happens whenever the ion product Q exceeds the solubility product, Ksp = ${sci(s.ksp ?? 0)} for ${s.formula}; the solid keeps forming until Q falls back to Ksp.`,
+    `${story} ${cap(pos.simple)} are positively charged and ${neg.simple} are negatively charged, and opposite charges attract. Water usually keeps ions apart by surrounding each one, but these two pull on each other so strongly that the water can't hold them apart. They lock together into ${s.name}, and millions of those pairs pile up into specks big enough to see: the cloud.`,
+    `${story} Dissolved ions stay apart only because water molecules cling to each one (hydration). For ${pos.formula} and ${neg.formula}, the attraction to each other in a solid crystal is stronger than water's grip, so the solid is the more stable arrangement and it precipitates: ${eq}. Ions that don't form such a solid (spectator ions) just stay dissolved.`,
+    `${eq}. Precipitation is favoured when the lattice energy of ${s.formula} outweighs the hydration enthalpies of its ions (ΔG_soln > 0). Quantitatively, solid forms while the ion product Q exceeds Ksp = ${sci(s.ksp ?? 0)}, and stops when Q = Ksp.`,
   )
 }
+
+// ---------- dissolving ----------
 
 export function whyDissolved(s: Species): Explanation {
-  const ions = partners(s)
-  if (s.metal) return X(`The ${s.name} reacted until there was none left: its atoms turned into ions and went into the solution.`, `The ${s.name} was oxidised to ${species(s.metal.ion).formula} ions, which are dissolved, so the solid metal disappears.`, `${s.formula}(s) → ${species(s.metal.ion).formula}(aq) + ${s.metal.n}e⁻; the reaction ran until the metal was used up.`)
-  if (s.ksp !== undefined && ions.includes('co3'))
-    return X(`Acid attacks the ${s.name}: it turns the carbonate part into carbon dioxide gas, which escapes, so the solid gets eaten away.`, `Acid reacts with carbonate: CO₃²⁻ + 2H⁺ → H₂O + CO₂. Removing the carbonate lets more ${s.name} dissolve, until it's all gone.`, `Protonating CO₃²⁻ drives [CO₃²⁻] ≪ Ksp/[M²⁺], so the solid dissolves (Le Chatelier) and CO₂ outgasses.`)
-  if (s.ksp !== undefined && ions.includes('OH-'))
-    return X(`The acid neutralised the ${s.name}, turning it into ions that dissolve.`, `H⁺ from the acid reacts with the hydroxide/oxide (forming water), so the metal ions are freed into solution.`, `Lowering pH reduces [OH⁻] so that Q < Ksp; the solid dissolves to restore equilibrium.`)
+  const ids = partners(s)
+  if (s.metal) {
+    const m = s.metal
+    return X(
+      `Every atom of ${s.name} gave away electrons and became a charged ion, and ions dissolve in water. Once all the atoms had done that, there was no solid metal left.`,
+      `The ${s.name} was oxidised: each atom lost ${m.n} electron${m.n > 1 ? 's' : ''} and became a ${species(m.ion).formula} ion, which water surrounds and carries off into solution.`,
+      `${s.formula}(s) → ${species(m.ion).formula}(aq) + ${m.n}e⁻ continued until the metal was consumed (the electron acceptor was in excess).`,
+    )
+  }
+  if (s.ksp !== undefined && ids.includes('co3'))
+    return X(
+      `${cap(s.name)} won't dissolve in plain water, but acids are full of hydrogen ions. They grab the carbonate part of the solid, turning it into carbonic acid, which falls apart into water and carbon dioxide gas. With its carbonate stolen, the rest of the solid breaks loose into the liquid, bit by bit, until it's all gone.`,
+      `Acid removes carbonate as it forms: CO₃²⁻ + 2H⁺ → H₂CO₃ → H₂O + CO₂(g). Because the carbonate keeps being taken away, the solid can never reach saturation, so it keeps dissolving (Le Chatelier).`,
+      `Protonation keeps [CO₃²⁻] far below Ksp/[M²⁺]; CO₂ outgassing makes the process irreversible in an open vessel.`,
+    )
+  if (s.ksp !== undefined && ids.includes('OH-'))
+    return X(
+      `The solid is made of metal ions locked together with hydroxide ions. The acid's hydrogen ions grab those hydroxide ions to make water, which frees the metal ions to dissolve.`,
+      `H⁺ + OH⁻ → H₂O removes the hydroxide holding the solid together, so the metal ions go into solution.`,
+      `Lowering pH drops [OH⁻] so Q < Ksp; the solid dissolves to restore equilibrium.`,
+    )
   return X(
-    `The ${s.name} broke apart into ions that spread out among the water molecules. They're too small to see, so the solid seems to vanish.`,
-    `Water molecules pull the ${s.name} crystal apart into separate ions${ions.length ? ` (${ions.map((i) => ion(i).formula).join(', ')})` : ''}, which stay dissolved.`,
-    `Dissolution: the lattice breaks up and the ions are hydrated (surrounded by oriented water dipoles). It proceeds while the solution is below saturation.`,
+    `Water molecules are lopsided: one end is slightly positive, the other slightly negative. They crowd around the ${s.name} crystal, and their charged ends tug on its ions until each one pulls free and drifts off, wrapped in water. The solid hasn't vanished: it's been taken apart into pieces far too small to see.`,
+    `Water is polar. Its slightly negative oxygen ends attract the positive ions, and its slightly positive hydrogen ends attract the negative ions. When that combined pull beats the attraction holding the crystal together, the ions${ids.length ? ` (${ids.map((i) => ion(i).formula).join(', ')})` : ''} separate and become hydrated.`,
+    `Dissolution proceeds while ΔG = ΔH_soln − TΔS_soln < 0: lattice enthalpy is paid back by hydration enthalpy, and dispersing the ions raises entropy.`,
   )
 }
+
+// ---------- gases ----------
 
 export function whyGas(gas: string, causes: Cause[]): Explanation {
   const metal = causes.find((c) => c.kind === 'acid-metal' || c.kind === 'alkali') as { metal: string; kind: string } | undefined
   if (gas === 'H2' && metal) {
     const m = species(metal.metal)
-    return metal.kind === 'alkali'
-      ? X(`${cap(m.name)} is so reactive it pulls water molecules apart. It grabs the oxygen part and the leftover hydrogen bubbles off as gas.`, `2${m.formula} + 2H₂O → 2${m.formula}OH + H₂. The metal gives electrons to water; hydrogen gas is released and the solution becomes alkaline.`, `Alkali metals have very low ionisation energies; electron transfer to H₂O (reduced to H₂ + OH⁻) is fast and strongly exothermic.`)
-      : X(`${cap(m.name)} is more reactive than hydrogen. It pushes hydrogen out of the acid, and the hydrogen bubbles away as gas.`, `${m.formula} + 2H⁺ → ${species(m.metal!.ion).formula} + H₂. The metal atoms give electrons to hydrogen ions from the acid, which pair up into H₂ gas.`, `E°(${species(m.metal!.ion).formula}/${m.formula}) = ${m.metal!.e0} V < 0 = E°(H⁺/H₂), so the metal reduces H⁺ spontaneously (ΔG = −nFE° < 0).`)
+    if (metal.kind === 'alkali')
+      return X(
+        `A ${m.name} atom has one electron on the outside that it holds very loosely, so it hands it to the first water molecule it touches. That breaks the water molecule: the hydrogen part becomes hydrogen gas and bubbles away, and the rest becomes hydroxide, which makes the water alkaline. Giving up that electron releases a lot of energy, which is why it gets so hot.`,
+        `${m.formula} loses its single outer electron very easily (low ionisation energy). Water accepts it: 2H₂O + 2e⁻ → H₂ + 2OH⁻. Overall 2${m.formula} + 2H₂O → 2${m.formula}OH + H₂, strongly exothermic.`,
+        `First ionisation energy of ${m.formula} is low, and E°(${species(m.metal!.ion).formula}/${m.formula}) = ${m.metal!.e0} V, so reduction of water is fast and ΔG ≪ 0; heat release rate is high enough to melt/ignite.`,
+      )
+    return X(
+      `Metal atoms hold their outer electrons quite loosely, and the acid is full of hydrogen ions, which are each missing an electron. When they touch, ${m.name} gives electrons to the hydrogen ions. Each hydrogen that gets an electron pairs up with another into a hydrogen molecule, a gas, so it bubbles out. The ${m.name} atoms that lost electrons become ions and dissolve. Metals that grip their electrons tightly, like copper, don't hand them over, so nothing happens with them.`,
+      `Redox: ${m.formula} → ${species(m.metal!.ion).formula} + ${m.metal!.n}e⁻ (oxidised), 2H⁺ + 2e⁻ → H₂ (reduced). It happens because ${m.name} holds its electrons less tightly than hydrogen does; that's what being "above hydrogen in the reactivity series" means.`,
+      `E°(${species(m.metal!.ion).formula}/${m.formula}) = ${m.metal!.e0} V < E°(H⁺/H₂) = 0 V, so E°cell > 0 and ΔG = −nFE° < 0. Cu (+0.34 V) has E°cell < 0 and doesn't react.`,
+    )
   }
-  if (gas === 'O2') return X('The black powder (a catalyst) helps hydrogen peroxide break apart into water and oxygen gas, much faster than it would alone.', '2H₂O₂ → 2H₂O + O₂. Manganese dioxide is a catalyst: it speeds up the breakdown without being used up.', 'MnO₂ provides a surface pathway with a lower activation energy; it isn\'t consumed, and the equilibrium position is unchanged.')
-  if (gas === 'CO2') return X('Acid reacted with a carbonate. That always makes carbon dioxide gas, the same gas that makes fizzy drinks fizzy.', 'Acid + carbonate → salt + water + carbon dioxide: CO₃²⁻ + 2H⁺ → H₂O + CO₂(g).', 'Carbonate is protonated to H₂CO₃*, whose concentration exceeds CO₂\'s solubility, so CO₂ outgasses.')
-  return X(`A gas was given off.`, `A reaction produced ${gas}.`, `${gas} evolved.`)
+  if (gas === 'O2')
+    return X(
+      `Hydrogen peroxide molecules are unstable: each one would rather be water plus oxygen. But they need a "push" to start breaking apart, so on their own they fall apart very slowly. The surface of the black manganese dioxide gives them an easy route, so millions break apart at once and the oxygen bubbles out. The powder itself doesn't get used up: it's just a helper (a catalyst).`,
+      `2H₂O₂ → 2H₂O + O₂ is energetically downhill but has a high activation energy. MnO₂ provides a surface pathway with a much lower activation energy, so the rate shoots up. A catalyst changes the speed, not the products, and is left unchanged.`,
+      `MnO₂ lowers Ea (surface redox cycling Mn(IV)/Mn(II)), increasing k by orders of magnitude (Arrhenius); ΔH = −98.2 kJ mol⁻¹ and the equilibrium are unaffected.`,
+    )
+  if (gas === 'CO2')
+    return X(
+      `Acids are full of hydrogen ions. A carbonate ion grabs two of them and turns into carbonic acid, a molecule so unstable that it immediately falls apart into water and carbon dioxide. Carbon dioxide doesn't dissolve well in water, so it escapes as bubbles. It's the same thing that happens in fizzy drinks.`,
+      `CO₃²⁻ + 2H⁺ → H₂CO₃ → H₂O + CO₂. Carbonic acid decomposes almost instantly, and CO₂'s low solubility means it leaves the solution as gas, which pulls the reaction forward.`,
+      `Protonation gives H₂CO₃* whose concentration exceeds CO₂'s solubility (Henry's law), so CO₂ nucleates bubbles and outgasses, irreversibly in an open vessel.`,
+    )
+  return X(`A reaction produced ${gas} gas, which doesn't dissolve well, so it bubbled out.`, `${gas} evolved.`, `${gas} evolved.`)
 }
 
-export function whyHeat(dT: number, causes: Cause[]): Explanation {
+// ---------- heat ----------
+
+export function whyHeat(dT: number, causes: Cause[], ctx: WhyContext = {}): Explanation {
   const heats = causes.filter((c): c is Extract<Cause, { kJ: number }> => 'kJ' in c && Math.abs(c.kJ) > 1e-4)
   const main = heats.sort((a, b) => Math.abs(b.kJ) - Math.abs(a.kJ))[0]
   const hot = dT > 0
   if (main?.kind === 'neutralize')
-    return X('When an acid and a base cancel out, they make water, and making water releases energy as heat.', 'Neutralisation is exothermic: H⁺ + OH⁻ → H₂O gives out about 57 kJ for every mole of water formed.', `ΔH_neut ≈ −57.1 kJ mol⁻¹; here about ${Math.abs(main.kJ).toFixed(2)} kJ was released into the solution (q = mcΔT).`)
+    return X(
+      `${you(ctx)}acid met base. Acids are full of hydrogen ions (H⁺) and bases are full of hydroxide ions (OH⁻), and the two attract each other strongly. When they snap together into water molecules, the energy of that attraction is released, a bit like two magnets clacking together. That energy comes out as heat and warms the liquid.`,
+      `H⁺ + OH⁻ → H₂O. Forming the new O–H bond releases more energy than it costs to pull the ions away from the water around them, so the reaction is exothermic: about 57 kJ for every mole of water made, whichever strong acid and base you use.`,
+      `ΔH_neut ≈ −57.1 kJ mol⁻¹ (the reverse of water's autoionisation, ΔH = +55.8). Here ≈ ${Math.abs(main.kJ).toFixed(2)} kJ went into the solution: ΔT = q/(mc).`,
+    )
   if (main?.kind === 'dissolve') {
     const s = species(main.species)
     return hot
-      ? X(`Dissolving ${s.name} gives out heat. Pulling the solid apart takes energy, but water molecules hugging the ions gives back even more, so it warms up.`, `Dissolving ${s.name} is exothermic: the energy released when water surrounds the ions (hydration) is bigger than the energy needed to break up the crystal.`, `ΔH_soln(${s.formula}) = ${s.dissolveKJ} kJ mol⁻¹ = lattice enthalpy (endothermic) + hydration enthalpy (more exothermic).`)
-      : X(`Dissolving ${s.name} soaks up heat. Pulling the solid apart takes more energy than the water gives back, so it takes that energy from the water, and it gets cold.`, `Dissolving ${s.name} is endothermic: breaking up the crystal costs more energy than hydration returns. It still happens because spreading out the ions increases disorder (entropy).`, `ΔH_soln(${s.formula}) = +${s.dissolveKJ} kJ mol⁻¹ > 0, yet ΔG = ΔH − TΔS < 0 because ΔS_soln is large and positive.`)
+      ? X(
+          `Two things happen when ${s.name} dissolves. Pulling its crystal apart costs energy. Then water molecules crowd around each separated ion and cling to it, and that gives energy back. For ${s.name}, the clinging gives back more than the pulling apart cost, so there's energy left over, and it comes out as heat.`,
+          `Dissolving = breaking the lattice (costs energy) + hydrating the ions (releases energy). For ${s.formula} hydration wins, so ΔH_soln < 0 and the solution warms up. Small or highly charged ions attract water strongly, which tends to make dissolving exothermic.`,
+          `ΔH_soln(${s.formula}) = ${s.dissolveKJ} kJ mol⁻¹ = ΔH_lattice (endothermic) + ΣΔH_hydration (exothermic, larger in magnitude here).`,
+        )
+      : X(
+          `Two things happen when ${s.name} dissolves. Pulling its crystal apart costs energy, and water clinging to the separated ions gives some back, but for ${s.name} not enough. The missing energy gets borrowed from the water's own heat, so the water gets colder. It dissolves anyway because ions spread out through the water is a far more likely arrangement than ions packed in a crystal.`,
+          `For ${s.formula}, breaking the lattice costs more than hydration returns, so ΔH_soln > 0: the energy is taken from the surroundings. It's still spontaneous because the entropy gain of dispersing the ions outweighs the enthalpy cost.`,
+          `ΔH_soln(${s.formula}) = +${s.dissolveKJ} kJ mol⁻¹, but ΔG = ΔH − TΔS < 0 because ΔS_soln ≫ 0. This is how instant cold packs work.`,
+        )
   }
-  if (main) return X(hot ? 'The reaction released stored chemical energy as heat.' : 'The process took in heat from its surroundings.', hot ? 'This reaction is exothermic: its products have less chemical energy than the reactants, and the difference comes out as heat.' : 'This process is endothermic: it takes in energy from the surroundings.', `ΔH ≈ ${main.kJ.toFixed(2)} kJ for the amounts here; ΔT = −ΔH/C.`)
-  return X(hot ? 'Heat came from the warmer liquid you mixed in.' : 'Heat went into the colder liquid you mixed in.', 'Mixing liquids at different temperatures shares out the heat.', 'Final T = Σ(C_i T_i)/ΣC_i.')
+  if (main?.kind === 'displace' || main?.kind === 'acid-metal' || main?.kind === 'alkali' || main?.kind === 'catalysis')
+    return X(
+      hot
+        ? 'In the reaction, atoms swapped partners. The new arrangement holds its atoms and electrons together more tightly than the old one did, and the difference in energy is released as heat.'
+        : 'This process needed more energy than it released, so it took heat from the liquid.',
+      hot
+        ? 'The products sit at a lower chemical energy than the reactants (stronger bonding, or electrons held more tightly). That energy difference, ΔH, is released into the solution as heat: an exothermic reaction.'
+        : 'The products have more chemical energy than the reactants: an endothermic process draws heat from the surroundings.',
+      `ΔH ≈ ${main.kJ.toFixed(2)} kJ for these amounts; ΔT = −ΔH/C_total.`,
+    )
+  return X(hot ? 'You mixed in something warmer, and the heat spread out evenly.' : 'You mixed in something colder, and the heat spread out evenly.', 'Mixing liquids at different temperatures shares their heat until they reach one temperature.', 'T_final = Σ(C_i T_i)/ΣC_i.')
 }
 
-export function whyColor(after: SolutionColor, beforeName: string): Explanation {
+// ---------- color ----------
+
+export function whyColor(after: SolutionColor, beforeName: string, causes: Cause[] = [], ctx: WhyContext = {}): Explanation {
   const id = after.dominant
+  const ph = after.pH ?? 7
+  const acidity = ph < 6.5 ? 'acidic' : ph > 7.5 ? 'alkaline' : 'neutral'
   if (id && INDICATORS.includes(id)) {
     const s = species(id)
+    const shift = ctx.added ? `${you(ctx)}you made the liquid ${acidity}. ` : `The liquid is now ${acidity}. `
     return X(
-      `${cap(s.name)} is a dye that changes color depending on how acidic or alkaline the liquid is. The liquid is now ${after.pH! < 6.5 ? 'acidic' : after.pH! > 7.5 ? 'alkaline' : 'about neutral'}, and at that level it shows ${after.name.replace(/^pale /, '')}.`,
-      `Indicators are weak acids whose acid and base forms have different colors. At pH ${after.pH!.toFixed(1)}, ${s.name} is ${indicatorColor(id, after.pH!).name}.`,
-      `The indicator's two forms HIn ⇌ H⁺ + In⁻ absorb at different wavelengths; the observed color is set by [In⁻]/[HIn] = Ka/[H⁺] at pH ${after.pH!.toFixed(2)}.`,
+      `${shift}${cap(s.name)} is a dye whose molecules change shape when they gain or lose hydrogen ions. In ${acidity} liquid they're in the shape that reflects ${indicatorColor(id, ph).name} light, so that's the color you see.`,
+      `${shift}Indicators are weak acids: HIn ⇌ H⁺ + In⁻, and the two forms are different colors. Changing the hydrogen-ion concentration shifts which form dominates. At pH ${ph.toFixed(1)}, ${s.name} shows ${indicatorColor(id, ph).name}.`,
+      `[In⁻]/[HIn] = Ka/[H⁺]; at pH ${ph.toFixed(2)} the dominant form's absorption band sets the observed color (conjugation changes on (de)protonation shift λmax).`,
     )
   }
   if (id) {
     const s = species(id)
-    return X(`${cap(s.name.replace(/ ion$/, ''))} ions are ${s.color!.name}. There are now enough of them dissolved to color the liquid.`, `${s.formula} ions absorb some colors of light and let ${s.color!.name} through. Their color now dominates the solution.`, `${s.formula}(aq) absorbs in the visible (for transition-metal ions, d–d transitions); intensity follows Beer–Lambert, A = εcl.`)
+    return X(
+      `${ctx.added ? `${cap(ctx.added)} brought ${s.name.replace(/ ion$/, '')} ions into the liquid. ` : ''}These ions soak up some of the colors in white light, and the colors they don't soak up bounce back to your eye. For ${s.name.replace(/ ion$/, '')} ions what's left looks ${s.color!.name}.`,
+      `${s.formula} absorbs certain wavelengths of visible light (in transition-metal ions, by electrons jumping between d-orbitals). You see the complementary color: ${s.color!.name}. The more ions, the deeper the color.`,
+      `Absorption by ${s.formula}(aq) (d–d or charge-transfer bands) follows Beer–Lambert, A = εcl; perceived hue is complementary to λmax.`,
+    )
   }
-  return X(`The ${beforeName} color went away: whatever was coloring the liquid has been used up, turned into something else, or the indicator is now colorless.`, `The colored species has been consumed (e.g. reacted, precipitated or displaced), or the indicator has switched to its colorless form.`, `The absorbing species' concentration fell below visibility (A ≲ 0.05), or the indicator equilibrium shifted to its colorless form.`)
+  // Became colorless: say what took the color away.
+  const displaced = causes.find((c): c is Extract<Cause, { kind: 'displace' }> => c.kind === 'displace')
+  if (displaced) {
+    const lost = species(species(displaced.target).metal!.ion)
+    const gained = species(species(displaced.metal).metal!.ion)
+    return X(
+      `The ${beforeName} color came from ${lost.name.replace(/ ion$/, '')} ions in the water. The ${species(displaced.metal).name} turned them into solid ${species(displaced.target).name} metal, and the ${gained.name.replace(/ ion$/, '')} ions that took their place have no color, so the color faded away.`,
+      `${lost.formula} was colored; it was reduced to ${species(displaced.target).formula} metal and replaced by ${gained.formula}, which absorbs no visible light.`,
+      `[${lost.formula}] → 0 via displacement; ${gained.formula} (d¹⁰ or no d-electrons) has no d–d transitions in the visible.`,
+    )
+  }
+  return X(
+    `The ${beforeName} color faded because whatever was causing it is gone: the colored particles were used up in a reaction or locked into a solid, or an indicator dye switched to its colorless shape.`,
+    `The colored species was consumed (reacted or precipitated), or the indicator shifted to its colorless form at the new pH (${ph.toFixed(1)}).`,
+    `Absorbance fell below visibility (A ≲ 0.05).`,
+  )
 }
+
+// ---------- metals ----------
 
 export function whyDeposit(metal: Species, causes: Cause[]): Explanation {
   const c = causes.find((x): x is Extract<Cause, { kind: 'displace' }> => x.kind === 'displace' && x.target === metal.id)
   const pusher = c ? species(c.metal) : null
-  if (!pusher) return X(`Solid ${metal.name} formed.`, `${metal.formula} was reduced to the metal.`, `${metal.formula} deposited.`)
+  if (!pusher) return X(`${cap(metal.name)} ions picked up electrons and turned back into solid metal.`, `${metal.formula} ions were reduced to the metal.`, `${metal.formula} deposited.`)
+  const tIon = species(metal.metal!.ion)
+  const pIon = species(pusher.metal!.ion)
   return X(
-    `${cap(pusher.name)} is a more reactive ("pushier") metal than ${metal.name}. It gives away tiny particles called electrons to the ${metal.name} ions in the water, which turns them back into solid ${metal.name}, while the ${pusher.name} dissolves in their place.`,
-    `${pusher.formula} + ${species(metal.metal!.ion).formula} → ${species(pusher.metal!.ion).formula} + ${metal.formula}. A more reactive metal displaces a less reactive one from its salt. This is a redox reaction: ${pusher.name} is oxidised, ${metal.name} ions are reduced.`,
-    `E°(${species(metal.metal!.ion).formula}/${metal.formula}) = ${metal.metal!.e0} V vs E°(${species(pusher.metal!.ion).formula}/${pusher.formula}) = ${pusher.metal!.e0} V: E°cell = ${(metal.metal!.e0 - pusher.metal!.e0).toFixed(2)} V > 0, so ΔG = −nFE° < 0.`,
+    `${cap(pusher.name)} atoms hold on to their outer electrons less tightly than ${metal.name} atoms do. So when the ${pusher.name} touched the ${tIon.name.replace(/ ion$/, '')} ions in the water, electrons jumped from the ${pusher.name} to the ${metal.name}. Getting electrons back turns ${metal.name} ions into solid ${metal.name} metal, which coats the ${pusher.name}, while the ${pusher.name} atoms that lost electrons become ions and dissolve.`,
+    `${pusher.formula} + ${tIon.formula} → ${pIon.formula} + ${metal.formula}. Electrons flow from the metal that holds them less tightly (${pusher.name}) to the ions of the metal that holds them more tightly (${metal.name}). That's what "more reactive" means in the reactivity series.`,
+    `E°(${tIon.formula}/${metal.formula}) = ${metal.metal!.e0} V > E°(${pIon.formula}/${pusher.formula}) = ${pusher.metal!.e0} V, so E°cell = ${(metal.metal!.e0 - pusher.metal!.e0).toFixed(2)} V and ΔG = −nFE° < 0; ΔH ≈ −nFE° heats the solution.`,
   )
 }
 
 export const WHY_ALKALI = (metalId: string) => whyGas('H2', [{ kind: 'alkali', metal: metalId, kJ: 0 }])
 
+// ---------- tests & physical changes ----------
+
 export function whyFlame(ionId: string | null): Explanation {
-  if (!ionId) return X('Nothing in the sample gives off colored light in a flame.', 'Only certain metal ions (like sodium, lithium, copper) give flame colors.', 'No element present has strong visible emission lines at flame temperatures.')
+  if (!ionId) return X('Flame colors come from metal atoms giving off light. Nothing in this sample does that strongly enough to see over the burner\'s blue flame.', 'Only some metal ions (lithium, sodium, potassium, calcium, copper…) emit strongly in the visible at flame temperatures.', 'No species present has intense visible emission lines at ~1500 °C.')
   const s = species(ionId)
+  const el = s.name.replace(/ ion$/, '')
   return X(
-    `The heat gives the electrons in ${s.name.replace(/ ion$/, '')} extra energy. When they settle back down, they give off that energy as light, always the same color for the same metal: ${s.flame!.name}.`,
-    `Electrons in ${s.formula} are excited to higher energy levels by the flame, then drop back, emitting light of specific wavelengths. Each element has its own energy levels, so its own color.`,
-    `Thermal excitation followed by emission at characteristic lines (E = hν = hc/λ). The observed ${s.flame!.name} corresponds to ${s.formula}'s strongest visible transitions.`,
+    `The flame's heat kicks the electrons in the ${el} atoms up to higher energy levels. They can't stay there, so they drop back down, and each drop releases a little burst of light. Electrons in ${el} can only sit at certain heights, so the drops are always the same size, and the light is always the same color: ${s.flame!.name}. Every metal has its own set of steps, so its own color.`,
+    `Electrons in ${s.formula} are thermally excited, then relax, emitting photons whose energy equals the gap between levels. Because each element's energy levels are fixed and unique, the emitted colors identify it.`,
+    `Thermal excitation followed by emission at characteristic lines, E = hν = hc/λ; the ${s.flame!.name} is dominated by ${s.formula}'s strongest visible transitions.`,
   )
 }
 
 export function whySplint(result: 'H2' | 'O2' | 'CO2' | 'none'): Explanation {
   switch (result) {
-    case 'H2': return X('Hydrogen burns extremely fast when it meets the flame, with a tiny "pop" explosion. That pop is the test for hydrogen.', 'Hydrogen mixed with air ignites: 2H₂ + O₂ → 2H₂O. The rapid combustion makes the squeaky pop.', 'A H₂/air mixture within flammability limits (4–75%) deflagrates; the pressure pulse in the tube mouth gives the "squeak".')
-    case 'O2': return X('Fire needs oxygen. A glowing splint has almost gone out, but extra oxygen makes it burst into flame again. That\'s the test for oxygen.', 'Burning is a reaction with oxygen. Concentrated oxygen speeds it up enough to re-ignite a glowing splint.', 'Higher O₂ partial pressure raises the combustion rate above the threshold for flaming combustion.')
-    case 'CO2': return X('Carbon dioxide doesn\'t let things burn, so it smothers the flame.', 'CO₂ doesn\'t support combustion and displaces the oxygen around the flame.', 'CO₂ is fully oxidised and dilutes O₂ below the limiting oxygen concentration.')
-    case 'none': return X('There isn\'t enough of a special gas here to change how the splint burns.', 'No significant H₂, O₂ or CO₂ is collected at the mouth of the vessel.', 'Headspace composition ≈ air.')
+    case 'H2': return X('Hydrogen gas mixed with air burns incredibly fast once a flame touches it. The whole little pocket of gas at the mouth of the tube burns in an instant, a tiny explosion, and that\'s the "pop" you hear. Nothing else common makes that sound, so it\'s the test for hydrogen.', '2H₂ + O₂ → 2H₂O is extremely fast once ignited, so a hydrogen–air pocket burns almost all at once; the sudden expansion makes the squeaky pop.', 'H₂/air within its flammability limits (4–75 %) deflagrates with a high flame speed; the pressure pulse at the tube mouth gives the squeak.')
+    case 'O2': return X('Burning is a reaction with oxygen. A glowing splint is still hot but doesn\'t have enough oxygen around it to flame. Put it in nearly pure oxygen and the reaction speeds up so much that it bursts back into flame. That\'s the test for oxygen.', 'Combustion rate depends on how much oxygen reaches the fuel. Concentrated O₂ pushes the smouldering wood back above the point where it can sustain a flame.', 'Higher p(O₂) increases the surface combustion rate until heat release exceeds losses and flaming combustion resumes.')
+    case 'CO2': return X('Fire needs oxygen. Carbon dioxide is heavier than air and doesn\'t burn, so it pushes the oxygen away from the flame and smothers it. That\'s why some fire extinguishers are full of it.', 'CO₂ is already fully oxidised (it can\'t burn) and displaces the oxygen around the flame, so combustion stops.', 'Dilution below the limiting oxygen concentration (~15 % O₂) quenches the flame.')
+    case 'none': return X('There isn\'t enough hydrogen, oxygen or carbon dioxide at the mouth of the vessel to change how the splint burns. If a gas was made, it has drifted away or wasn\'t made here.', 'No significant H₂, O₂ or CO₂ is in the headspace: test straight after a reaction, before the gas escapes.', 'Headspace composition ≈ air.')
   }
 }
 
-export const WHY_BOILING = X('At 100 °C water has enough energy to turn into steam bubbles all through the liquid. Extra heat now goes into making steam, so the temperature stops rising.', 'At the boiling point, added energy breaks the attractions between water molecules (latent heat) instead of raising the temperature.', 'Boiling occurs when vapour pressure = atmospheric pressure; ΔH_vap = 40.7 kJ mol⁻¹ is absorbed at constant T.')
-export const WHY_DRY = X('All the water turned into steam. Anything that was dissolved is left behind as a solid.', 'Evaporating the solvent leaves the dissolved solute as crystals or residue.', 'With no solvent, the ions recombine into a solid residue.')
+export const WHY_BOILING = X('Heat makes water molecules move faster. At 100 °C some are moving fast enough to break away from their neighbours inside the liquid and form bubbles of steam. From then on, extra heat goes into breaking molecules free rather than speeding them up, so the temperature stops rising.', 'At the boiling point, added energy is used to overcome the attractions between water molecules (latent heat of vaporisation) instead of raising their kinetic energy, so the temperature stays constant.', 'Boiling begins when the vapour pressure equals atmospheric pressure; ΔH_vap = 40.7 kJ mol⁻¹ is absorbed at constant T.')
+export const WHY_DRY = X('Water molecules escaped as steam one by one until none were left. The dissolved substances can\'t evaporate, so they stay behind and pack back together into solid crystals.', 'Only the solvent evaporates; once it\'s gone, the ions have nothing to keep them apart and re-form a solid lattice.', 'Solute non-volatility; supersaturation as V → 0 drives crystallisation.')
 export const WHY_DECOMPOSE: Record<string, Explanation> = {
-  'CuSO4.5H2O': X('The blue crystals have water trapped inside them. Heat drives the water out as steam, and without it the crystals are white.', 'Hydrated copper sulfate contains water of crystallisation; heating removes it: CuSO₄·5H₂O → CuSO₄ + 5H₂O.', 'Losing coordinated water changes the Cu²⁺ ligand field, removing the d–d absorption responsible for the blue.'),
-  NaHCO3: X('Heat breaks baking soda apart into other substances, giving off carbon dioxide gas. That\'s what makes cakes rise!', '2NaHCO₃ → Na₂CO₃ + H₂O + CO₂ on heating (thermal decomposition).', 'Endothermic decomposition above ~80 °C; the CO₂ and steam leavening is entropy-driven at baking temperatures.'),
-  CuCO3: X('Heat breaks the green copper carbonate into black copper oxide and carbon dioxide gas.', 'CuCO₃ → CuO + CO₂. A color change and a gas are signs a new substance formed.', 'Small, highly polarising Cu²⁺ destabilises CO₃²⁻, so decomposition occurs at ~290 °C (vs ~825 °C for CaCO₃).'),
+  'CuSO4.5H2O': X('Blue copper sulfate crystals have water molecules built into them, snuggled around each copper ion. That arrangement is what makes them blue. Heat shakes the water loose and drives it off as steam, and copper sulfate without its water is white.', 'The Cu²⁺ ions in the crystal are surrounded by water molecules (water of crystallisation). Heating removes them: CuSO₄·5H₂O → CuSO₄ + 5H₂O. The water molecules around Cu²⁺ are what cause its blue color, so losing them turns it white.', 'Dehydration removes aqua ligands; the change in ligand field around Cu²⁺ shifts the d–d absorption out of the visible, so the solid appears white.'),
+  NaHCO3: X('Heat makes the baking soda molecules shake so hard they break apart into new substances, including carbon dioxide gas. Those gas bubbles are what make cakes rise.', '2NaHCO₃ → Na₂CO₃ + H₂O + CO₂. Above about 80 °C the hydrogen carbonate ion breaks up (thermal decomposition), releasing CO₂ and steam.', 'Endothermic decomposition, driven at baking temperatures by the large entropy gain of releasing two gases.'),
+  CuCO3: X('Heat makes the copper carbonate fall apart: the carbonate part breaks off as carbon dioxide gas, leaving black copper oxide behind. The color change tells you it\'s a brand-new substance.', 'CuCO₃ → CuO + CO₂. The small, highly charged Cu²⁺ ion pulls on the carbonate ion\'s electrons, weakening it so it breaks up at a fairly low temperature (~290 °C).', 'Cu²⁺ polarises CO₃²⁻, lowering the decomposition temperature (vs ~825 °C for CaCO₃, whose larger cation polarises less).'),
 }
 
 export const WHY_MG_BURNS = X(
-  'Magnesium reacts with oxygen from the air so fiercely that it gives off a blinding white light and a lot of heat. What\'s left is a new substance, white magnesium oxide.',
-  '2Mg + O₂ → 2MgO. Combustion is a fast reaction with oxygen that releases energy as heat and light; magnesium releases so much that it glows white-hot.',
-  'ΔH_f(MgO) = −601.6 kJ mol⁻¹. The flame reaches ~3100 °C, so the MgO particles glow as near-blackbody emitters across the visible spectrum (white light, rich in UV).',
+  'Magnesium atoms let go of their electrons to oxygen very eagerly, so once the flame gets it started the reaction runs away, releasing so much energy that the metal glows white-hot. What\'s left is a new substance, white magnesium oxide.',
+  '2Mg + O₂ → 2MgO. Combustion is a fast reaction with oxygen. Magnesium oxide is extremely stable, so a huge amount of energy is released as heat and light.',
+  'ΔH_f(MgO) = −601.6 kJ mol⁻¹. The flame reaches ~3100 °C, so MgO particles glow as near-blackbody emitters across the visible (white light, rich in UV).',
 )
