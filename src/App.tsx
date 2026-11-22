@@ -6,6 +6,7 @@ const demos = {
   notebook: lazy(() => import('./dev/NotebookDemo')),
   bench: lazy(() => import('./dev/BenchDemo')),
   ramp: lazy(() => import('./dev/RampDemo')),
+  bio: lazy(() => import('./dev/BioDemo')),
 }
 
 export default function App() {
