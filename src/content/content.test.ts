@@ -30,3 +30,7 @@ test('there are at least a dozen chemistry experiments', () => {
 test('there are at least a dozen physics experiments', () => {
   expect(registry.experiments().filter((e) => e.domain === 'physics').length).toBeGreaterThanOrEqual(12)
 })
+
+test('there are at least twenty biology experiments', () => {
+  expect(registry.experiments().filter((e) => e.domain === 'biology').length).toBeGreaterThanOrEqual(20)
+})

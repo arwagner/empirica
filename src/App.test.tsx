@@ -55,12 +55,13 @@ test('stations tab lists stations by room', () => {
   const phys = screen.getByRole('region', { name: 'Physics Hall' })
   expect(within(phys).getAllByRole('button', { name: 'Go there' })).toHaveLength(5)
   expect(within(phys).queryAllByText('Coming soon')).toHaveLength(0)
+  expect(screen.getByRole('region', { name: 'Biology Lab' })).toBeInTheDocument()
 })
 
 test('catalog search, then Start opens the guided experiment at its station', () => {
   render(<App />)
   key('KeyM')
-  fireEvent.change(screen.getByRole('searchbox', { name: 'Search experiments' }), { target: { value: 'flame' } })
+  fireEvent.change(screen.getByRole('searchbox', { name: 'Search experiments' }), { target: { value: 'flame tests' } })
   const cards = screen.getAllByRole('button', { name: 'Start' })
   expect(cards).toHaveLength(1)
   fireEvent.click(cards[0])
