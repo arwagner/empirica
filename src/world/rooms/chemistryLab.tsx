@@ -35,7 +35,10 @@ const INTERACTABLES: Interactable[] = [
     view: { center: [7.2, 0, -1], faces: [[-1, 0, 0]], distance: 1.7, height: 1.3, targetY: 1.1 },
     setup: { vessels: [1, 2, 3, 4].map((n) => ({ id: `test tube ${n}`, kind: 'test-tube' })) },
   },
-  { id: 'door-bio', kind: 'door', name: 'Biology Lab', blurb: 'Opens in a future update.', marker: [-7.85, 2.5, 3] },
+  {
+    id: 'door-bio', kind: 'door', name: 'Biology Lab', blurb: 'Cells, genes, enzymes and ecosystems.', marker: [-7.85, 2.5, 3],
+    leadsTo: { room: 'biology-lab', spawn: { position: [7.6, 1.6, 3], yaw: Math.PI / 2 } },
+  },
   {
     id: 'door-phys', kind: 'door', name: 'Physics Hall', blurb: 'Motion, forces and energy.', marker: [7.85, 2.5, 3],
     leadsTo: { room: 'physics-hall', spawn: { position: [-8.6, 1.6, 3], yaw: -Math.PI / 2 } },
