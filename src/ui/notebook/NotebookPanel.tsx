@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import {
   formatElapsed, formatMeasurement, measurementSeries, toCSV, toMarkdown,
-  type Level, type Notebook, type NotebookEntry,
+  type Notebook, type NotebookEntry,
 } from '../../core'
 import { SeriesChart } from './SeriesChart'
-import { WhyToggle } from '../WhyToggle'
 import './notebook.css'
 
 const KIND: Record<NotebookEntry['kind'], { icon: string; label: string }> = {
@@ -23,7 +22,7 @@ function download(name: string, text: string, type: string) {
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'notebook'
 
-export function NotebookPanel({ notebook, onAddNote, level = 'simple' }: { notebook: Notebook; onAddNote: (text: string) => void; level?: Level }) {
+export function NotebookPanel({ notebook, onAddNote }: { notebook: Notebook; onAddNote: (text: string) => void }) {
   const [draft, setDraft] = useState('')
   const series = measurementSeries(notebook)
   const hasMeasurements = series.length > 0
@@ -60,7 +59,6 @@ export function NotebookPanel({ notebook, onAddNote, level = 'simple' }: { noteb
               <span className="text">
                 {e.text}
                 {e.kind === 'measurement' && <b> {formatMeasurement(e.measurement)}</b>}
-                {e.kind === 'observation' && e.why && <WhyToggle why={e.why} level={level} />}
               </span>
             </li>
           ))}

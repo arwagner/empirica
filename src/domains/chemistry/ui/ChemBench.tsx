@@ -2,13 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import type { LabEvent } from '../../../core'
 import type { BenchProps } from '../../../ui/station/StationWorkspace'
 import { useLabSession } from '../../../ui/useLabSession'
-import { WhyToggle } from '../../../ui/WhyToggle'
 import { flameColor } from '../appearance'
 import { chemistryEngine, VESSEL_KINDS, type ChemState } from '../engine'
 import type { ChemAction, VesselKind } from '../schemas'
 import { Glassware } from './Glassware'
 import { Shelf } from './Shelf'
-import { VesselInside } from './VesselInside'
 import './bench.css'
 
 const HEAT = [['Off', 0], ['Low', 150], ['Medium', 300], ['High', 600], ['Bunsen', 1000]] as const
@@ -34,7 +32,7 @@ function nextId(state: ChemState, kind: VesselKind) {
 /** The 2D chemistry workbench. Drives the engine through `apply` (guided or free). */
 export function ChemBench({ sandbox, apply: rawApply }: BenchProps) {
   const state = sandbox.state as ChemState
-  const { log, notebook, level } = useLabSession()
+  const { log, notebook } = useLabSession()
   const ids = Object.keys(state.vessels)
   const [sel, setSel] = useState<string | null>(ids[0] ?? null)
   const selected = sel && state.vessels[sel] ? sel : (ids[0] ?? null)
@@ -45,8 +43,6 @@ export function ChemBench({ sandbox, apply: rawApply }: BenchProps) {
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(10)
   const [pourTo, setPourTo] = useState('')
   const [pourAmt, setPourAmt] = useState<number | 'all'>('all')
-  // Dev aid: ?inside opens the panel on load.
-  const [inside, setInside] = useState(() => new URLSearchParams(location.search).has('inside'))
 
   // Fizz for a few seconds whenever an action makes a vessel give off gas.
   const [fizzing, setFizzing] = useState<Record<string, boolean>>({})
@@ -188,26 +184,15 @@ export function ChemBench({ sandbox, apply: rawApply }: BenchProps) {
               <button onClick={() => apply({ type: 'splint', vessel: selected, splint: 'burning' })}>Burning splint</button>
               <button onClick={() => apply({ type: 'splint', vessel: selected, splint: 'glowing' })}>Glowing splint</button>
               <button onClick={() => apply({ type: 'burn', vessel: selected })}>Burn in flame</button>
-              <button onClick={() => setInside((x) => !x)} aria-expanded={inside}>What's inside?</button>
               <button className="danger" onClick={() => apply({ type: 'empty', vessel: selected })}>Empty</button>
               <button className="danger" onClick={() => apply({ type: 'remove-vessel', vessel: selected })}>Put away</button>
             </div>
           </div>
         )}
 
-        {v && inside && (
-          <section className="inside-panel" aria-label={`Inside the ${selected}`}>
-            <h4>Inside the {selected}</h4>
-            <VesselInside vessel={v} />
-          </section>
-        )}
-
         <ul className="feed" aria-label="Latest observations" aria-live="polite">
           {recent.map((e) => (
-            <li key={e.id}>
-              {e.text}
-              {e.why && <WhyToggle why={e.why} level={level} />}
-            </li>
+            <li key={e.id}>{e.text}</li>
           ))}
         </ul>
       </div>

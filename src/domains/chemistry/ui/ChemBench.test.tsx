@@ -91,23 +91,3 @@ test('amounts: type a value, bump it with − / +, invalid amounts disable Add',
   fireEvent.keyDown(box, { key: 'Enter' })
   expect(vessel(/^beaker A: 3 mL/)).toBeInTheDocument()
 })
-
-test('Why? reveals the explanation at the chosen level', () => {
-  renderBench()
-  fireEvent.click(screen.getByRole('tab', { name: 'Salt solutions' }))
-  fireEvent.click(screen.getByRole('button', { name: /Add 10 mL of 0.1 M sodium chloride to beaker A/ }))
-  fireEvent.click(screen.getByRole('button', { name: /Add 10 mL of 0.1 M silver nitrate to beaker A/ }))
-  const feed = screen.getByRole('list', { name: 'Latest observations' })
-  fireEvent.click(within(feed).getAllByRole('button', { name: 'Why?' })[0])
-  expect(within(feed).getByRole('note')).toHaveTextContent(/opposite charges attract/)
-})
-
-test("What's inside? shows the particles in the selected vessel", () => {
-  renderBench()
-  fireEvent.click(screen.getByRole('button', { name: /Add 10 mL of 0.1 M hydrochloric acid to beaker A/ }))
-  fireEvent.click(screen.getByRole('button', { name: "What's inside?" }))
-  const panel = screen.getByRole('region', { name: 'Inside the beaker A' })
-  expect(within(panel).getByText('hydrogen ions')).toBeInTheDocument()
-  expect(within(panel).getByText('chloride ions')).toBeInTheDocument()
-  expect(within(panel).getByText(/The more of these, the more acidic/)).toBeInTheDocument()
-})

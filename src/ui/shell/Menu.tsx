@@ -24,7 +24,7 @@ interface Props {
 }
 
 export function Menu({ tab, onTab, onClose, experiments, domains, stations, onStartExperiment, onGoToStation }: Props) {
-  const { notebook, note, level } = useLabSession()
+  const { notebook, note } = useLabSession()
   return (
     <div className="menu-veil" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="menu" role="dialog" aria-modal="true" aria-label="Lab menu">
@@ -64,7 +64,7 @@ export function Menu({ tab, onTab, onClose, experiments, domains, stations, onSt
               ))}
             </div>
           )}
-          {tab === 'notebook' && <NotebookPanel notebook={notebook} onAddNote={note} level={level} />}
+          {tab === 'notebook' && <NotebookPanel notebook={notebook} onAddNote={note} />}
         </div>
       </div>
     </div>
