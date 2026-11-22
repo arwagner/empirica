@@ -51,7 +51,8 @@ export function Glassware({ vessel, selected, fizzing, flame, onSelect }: Props)
   const span = shape.right - shape.left
   const boiling = !!vessel.boiling
   const heat = Math.min(1, vessel.heaterW / 1000)
-  const label = `${vessel.id}: ${vol >= 0.5 ? `${Math.round(vol)} mL` : solids.length ? 'solid' : 'empty'}, ${vessel.tempC.toFixed(0)} °C${col.name !== 'colorless' && vol > 0.5 ? `, ${col.name}` : ''}`
+  const volText = vol >= 0.005 ? `${vol.toFixed(2)} mL` : solids.length ? 'solid' : 'empty'
+  const label = `${vessel.id}: ${volText}, ${vessel.tempC.toFixed(0)} °C${col.name !== 'colorless' && vol > 0.5 ? `, ${col.name}` : ''}`
 
   return (
     <button className={`glassware ${selected ? 'selected' : ''}`} onClick={onSelect} aria-pressed={selected} aria-label={label} title={label}>
@@ -115,7 +116,7 @@ export function Glassware({ vessel, selected, fizzing, flame, onSelect }: Props)
       </svg>
       <span className="name">{vessel.id}</span>
       <span className="sub">
-        {vol >= 0.5 ? `${Math.round(vol)} mL` : solids.length ? 'solid' : 'empty'} · {vessel.tempC.toFixed(1)} °C
+        {volText} · {vessel.tempC.toFixed(1)} °C
       </span>
     </button>
   )
