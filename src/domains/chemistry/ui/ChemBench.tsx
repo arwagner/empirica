@@ -7,12 +7,13 @@ import { chemistryEngine, VESSEL_KINDS, type ChemState } from '../engine'
 import type { ChemAction, VesselKind } from '../schemas'
 import { Glassware } from './Glassware'
 import { Shelf } from './Shelf'
+import { SpectrumPanel } from './SpectrumPanel'
 import './bench.css'
 
 const HEAT = [['Off', 0], ['Low', 150], ['Medium', 300], ['High', 600], ['Bunsen', 1000]] as const
 const SPEEDS = [1, 10, 60] as const
 const TICK_MS = 250
-const INSTRUMENTS = [['thermometer', 'Thermometer'], ['ph-meter', 'pH meter'], ['balance', 'Balance'], ['gas-syringe', 'Gas syringe']] as const
+const INSTRUMENTS = [['thermometer', 'Thermometer'], ['ph-meter', 'pH meter'], ['balance', 'Balance'], ['gas-syringe', 'Gas syringe'], ['spectrometer', 'Spectrometer peak']] as const
 const SHORT: Record<VesselKind, string> = {
   'beaker-250': 'beaker', 'beaker-100': 'small beaker', 'flask-250': 'flask', 'test-tube': 'test tube',
   'boiling-tube': 'boiling tube', calorimeter: 'cup', crucible: 'crucible',
@@ -43,6 +44,7 @@ export function ChemBench({ sandbox, apply: rawApply }: BenchProps) {
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(10)
   const [pourTo, setPourTo] = useState('')
   const [pourAmt, setPourAmt] = useState<number | 'all'>('all')
+  const [showSpectrum, setShowSpectrum] = useState(false)
 
   // Fizz for a few seconds whenever an action makes a vessel give off gas.
   const [fizzing, setFizzing] = useState<Record<string, boolean>>({})
@@ -149,6 +151,10 @@ export function ChemBench({ sandbox, apply: rawApply }: BenchProps) {
                 )
               })}
             </div>
+            <div className="row">
+              <button onClick={() => setShowSpectrum((x) => !x)} aria-expanded={showSpectrum}>{showSpectrum ? 'Hide spectrum' : 'Show spectrum'}</button>
+            </div>
+            {showSpectrum && <SpectrumPanel vessel={selected} contents={v.contents} />}
 
             <div className="row">
               <span className="lbl">Heat</span>

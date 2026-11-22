@@ -1,4 +1,5 @@
 import type { Engine, LabEvent, Measurement } from '../../core'
+import { peak, spectrum } from './spectrum'
 import { flameColor, solutionColor, visibleSolid } from './appearance'
 import {
   addIons, asDissolved, hasWater, pH, precipitate, releaseCO2, solveUpTo, titratableAcidity, waterLitres, waterMol, type Contents,
@@ -534,6 +535,11 @@ function measure(state: ChemState, instrument: string, target: string): Measurem
     case 'gas-syringe': {
       const mol = Object.values(v.evolved).reduce((a, b) => a + b, 0)
       return { quantity: 'gas volume', value: round(mol * MOLAR_GAS_ML, 1), unit: 'mL', instrument }
+    }
+    case 'spectrometer': {
+      const s = spectrum(v.contents)
+      const p = s && peak(s)
+      return p ? { quantity: 'peak absorbance', value: p.nm, unit: 'nm', instrument } : null
     }
     default:
       return null

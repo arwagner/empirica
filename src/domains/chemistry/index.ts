@@ -17,6 +17,7 @@ const EQUIPMENT: Equipment[] = [
   { id: 'ph-meter', name: 'pH meter', measures: ['pH'] },
   { id: 'balance', name: 'Balance', measures: ['mass'] },
   { id: 'gas-syringe', name: 'Gas syringe', measures: ['gas volume'] },
+  { id: 'spectrometer', name: 'UV-visible spectrometer', description: 'Shines light from 350 to 900 nm through a 1 cm cuvette of the sample and measures how much of each wavelength is absorbed.', measures: ['peak absorbance'] },
   { id: 'splint', name: 'Wooden splints', measures: [] },
   { id: 'wire-loop', name: 'Nichrome wire loop', measures: [] },
   { id: 'filter-funnel', name: 'Filter funnel and paper', measures: [] },

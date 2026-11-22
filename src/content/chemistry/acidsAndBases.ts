@@ -219,5 +219,6 @@ export const redCabbage: ChemExperiment = {
   variations: [
     { prompt: 'Test baking soda solution, ammonia and limewater. Where do they fit in the rainbow?' },
     { prompt: 'Compare with universal indicator from the shelf.' },
+    { prompt: 'Select each tube and open the spectrometer. Watch the absorption peak move as the pH rises, and see which form of the pigment is doing the absorbing.' },
   ],
 }
