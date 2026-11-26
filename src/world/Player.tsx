@@ -14,6 +14,11 @@ export type Mode = 'start' | 'walking' | 'paused' | 'ready' | 'suspended' | 'fly
 const EYE = 1.6
 const RADIUS = 0.3
 const REACH = 3
+/** Walking and running speeds, metres per second. A touch drag is capped at a run. */
+const WALK_SPEED = 3
+const RUN_SPEED = 5.5
+/** How far you can look up or down, radians from level. */
+const PITCH_LIMIT = 1.45
 const FLY_SECONDS = 0.85
 /** Fraction of the fly-in at which the 2D view starts dissolving in over the settling camera. */
 const REVEAL_AT = 0.55
@@ -104,7 +109,7 @@ export function Player({ room, spawn, mode, stationId, onFocus, onActivate, onAr
     const move = (e: MouseEvent) => {
       if (!locked()) return
       yaw.current -= e.movementX * 0.0022
-      pitch.current = THREE.MathUtils.clamp(pitch.current - e.movementY * 0.0022, -1.45, 1.45)
+      pitch.current = THREE.MathUtils.clamp(pitch.current - e.movementY * 0.0022, -PITCH_LIMIT, PITCH_LIMIT)
     }
     const down = (e: KeyboardEvent) => keys.current.add(e.code)
     const up = (e: KeyboardEvent) => keys.current.delete(e.code)
@@ -139,7 +144,7 @@ export function Player({ room, spawn, mode, stationId, onFocus, onActivate, onAr
     const apply = (i: TouchIntent) => {
       if (modeRef.current !== 'walking') return
       yaw.current += i.yaw
-      pitch.current = THREE.MathUtils.clamp(pitch.current + i.pitch, -1.45, 1.45)
+      pitch.current = THREE.MathUtils.clamp(pitch.current + i.pitch, -PITCH_LIMIT, PITCH_LIMIT)
       touchStep.current.forward += i.forward
       touchStep.current.strafe += i.strafe
       if (i.tap) {
@@ -225,13 +230,13 @@ export function Player({ room, spawn, mode, stationId, onFocus, onActivate, onAr
     let forward = 0
     let strafe = 0
     if (fwd || side) {
-      const speed = (k.has('ShiftLeft') || k.has('ShiftRight') ? 5.5 : 3) * dt
+      const speed = (k.has('ShiftLeft') || k.has('ShiftRight') ? RUN_SPEED : WALK_SPEED) * dt
       const len = Math.hypot(fwd, side)
       forward = (fwd / len) * speed
       strafe = (side / len) * speed
     }
     // Touch drags, no faster than a run.
-    const { step, rest } = takeStep(touchStep.current, 5.5 * dt)
+    const { step, rest } = takeStep(touchStep.current, RUN_SPEED * dt)
     touchStep.current = rest
     forward += step.forward
     strafe += step.strafe
