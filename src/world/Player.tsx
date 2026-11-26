@@ -2,6 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { cameraLookQuaternion, stationView } from './camera'
+import { takeStep, toNdc, TouchWalk, type Step, type TouchPoint, type TouchIntent } from './touchWalk'
 import type { Room, Spawn } from './types'
 
 /**
@@ -13,6 +14,11 @@ export type Mode = 'start' | 'walking' | 'paused' | 'ready' | 'suspended' | 'fly
 const EYE = 1.6
 const RADIUS = 0.3
 const REACH = 3
+/** Walking and running speeds, metres per second. A touch drag is capped at a run. */
+const WALK_SPEED = 3
+const RUN_SPEED = 5.5
+/** How far you can look up or down, radians from level. */
+const PITCH_LIMIT = 1.45
 const FLY_SECONDS = 0.85
 /** Fraction of the fly-in at which the 2D view starts dissolving in over the settling camera. */
 const REVEAL_AT = 0.55
@@ -52,10 +58,28 @@ export function Player({ room, spawn, mode, stationId, onFocus, onActivate, onAr
   const saved = useRef(new THREE.Vector3())
   const fly = useRef<{ from: THREE.Vector3; fromQ: THREE.Quaternion; to: THREE.Vector3; toQ: THREE.Quaternion; t: number; out: boolean; revealed: boolean } | null>(null)
   const ray = useRef(new THREE.Raycaster())
+  const touchWalk = useRef(new TouchWalk())
+  /** Touch walking waiting for the next frame (metres along / across the view), so collisions apply once per frame. */
+  const touchStep = useRef<Step>({ forward: 0, strafe: 0 })
+  const modeRef = useRef(mode)
   const cb = useRef({ onFocus, onActivate, onArrived, onReveal })
   useLayoutEffect(() => {
     cb.current = { onFocus, onActivate, onArrived, onReveal }
+    modeRef.current = mode
   })
+
+  /** The nearest visible interactable along a ray from the camera through `ndc`, within reach. */
+  const pick = (ndc: THREE.Vector2): string | null => {
+    ray.current.setFromCamera(ndc, camera)
+    ray.current.far = REACH
+    for (const hit of ray.current.intersectObjects(scene.children, true)) {
+      if (!visibleInScene(hit.object)) continue // other rooms are mounted but hidden
+      let o: THREE.Object3D | null = hit.object
+      while (o && !o.userData.interactId) o = o.parent
+      return o?.userData.interactId ?? null // only the nearest surface counts, so walls block what's behind them
+    }
+    return null
+  }
 
   useEffect(() => {
     const start = spawn ?? room.spawn
@@ -85,7 +109,7 @@ export function Player({ room, spawn, mode, stationId, onFocus, onActivate, onAr
     const move = (e: MouseEvent) => {
       if (!locked()) return
       yaw.current -= e.movementX * 0.0022
-      pitch.current = THREE.MathUtils.clamp(pitch.current - e.movementY * 0.0022, -1.45, 1.45)
+      pitch.current = THREE.MathUtils.clamp(pitch.current - e.movementY * 0.0022, -PITCH_LIMIT, PITCH_LIMIT)
     }
     const down = (e: KeyboardEvent) => keys.current.add(e.code)
     const up = (e: KeyboardEvent) => keys.current.delete(e.code)
@@ -112,6 +136,52 @@ export function Player({ room, spawn, mode, stationId, onFocus, onActivate, onAr
     }
   }, [gl])
 
+  // Touch: drag to walk, twist to turn, tap to use (see touchWalk.ts). Mouse and pen keep the desktop path above.
+  useEffect(() => {
+    const el = gl.domElement
+    const tw = touchWalk.current
+    const point = (e: PointerEvent): TouchPoint => ({ id: e.pointerId, x: e.clientX, y: e.clientY, t: e.timeStamp })
+    const apply = (i: TouchIntent) => {
+      if (modeRef.current !== 'walking') return
+      yaw.current += i.yaw
+      pitch.current = THREE.MathUtils.clamp(pitch.current + i.pitch, -PITCH_LIMIT, PITCH_LIMIT)
+      touchStep.current.forward += i.forward
+      touchStep.current.strafe += i.strafe
+      if (i.tap) {
+        const ndc = toNdc(i.tap.x, i.tap.y, el.getBoundingClientRect())
+        const id = pick(new THREE.Vector2(ndc.x, ndc.y))
+        if (id) cb.current.onActivate(id)
+      }
+    }
+    const down = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch') return
+      el.setPointerCapture?.(e.pointerId)
+      apply(tw.down(point(e)))
+    }
+    const move = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') apply(tw.move(point(e)))
+    }
+    const up = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') apply(tw.up(point(e)))
+    }
+    const cancel = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') tw.cancel(e.pointerId)
+    }
+    el.addEventListener('pointerdown', down)
+    el.addEventListener('pointermove', move)
+    el.addEventListener('pointerup', up)
+    el.addEventListener('pointercancel', cancel)
+    return () => {
+      el.removeEventListener('pointerdown', down)
+      el.removeEventListener('pointermove', move)
+      el.removeEventListener('pointerup', up)
+      el.removeEventListener('pointercancel', cancel)
+      tw.reset()
+    }
+  // pick only reads the camera, scene and refs, which are stable for the Player's life.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gl])
+
   // Start a camera flight when the mode asks for one.
   useEffect(() => {
     if (mode === 'flyingIn' && stationId) {
@@ -127,6 +197,8 @@ export function Player({ room, spawn, mode, stationId, onFocus, onActivate, onAr
       fly.current = { from: camera.position.clone(), fromQ: camera.quaternion.clone(), to: saved.current.clone(), toQ: q, t: 0, out: true, revealed: true }
     }
     keys.current.clear()
+    touchStep.current = { forward: 0, strafe: 0 }
+    if (mode !== 'walking') touchWalk.current.reset()
     if (mode === 'flyingIn' || mode === 'flyingOut') focused.current = null // no re-trigger mid-flight
   }, [mode, stationId, camera, room])
 
@@ -155,29 +227,31 @@ export function Player({ room, spawn, mode, stationId, onFocus, onActivate, onAr
     const k = keys.current
     const fwd = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0)
     const side = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0)
+    let forward = 0
+    let strafe = 0
     if (fwd || side) {
-      const speed = (k.has('ShiftLeft') || k.has('ShiftRight') ? 5.5 : 3) * dt
+      const speed = (k.has('ShiftLeft') || k.has('ShiftRight') ? RUN_SPEED : WALK_SPEED) * dt
       const len = Math.hypot(fwd, side)
+      forward = (fwd / len) * speed
+      strafe = (side / len) * speed
+    }
+    // Touch drags, no faster than a run.
+    const { step, rest } = takeStep(touchStep.current, RUN_SPEED * dt)
+    touchStep.current = rest
+    forward += step.forward
+    strafe += step.strafe
+    if (forward || strafe) {
       const s = Math.sin(yaw.current)
       const c = Math.cos(yaw.current)
-      const dx = ((-s * fwd + c * side) / len) * speed
-      const dz = ((-c * fwd - s * side) / len) * speed
+      const dx = -s * forward + c * strafe
+      const dz = -c * forward - s * strafe
       const p = camera.position
       if (!blocked(room, p.x + dx, p.z)) p.x += dx
       if (!blocked(room, p.x, p.z + dz)) p.z += dz
       p.y = EYE + Math.sin(performance.now() / 110) * 0.02 // a little head bob
     }
 
-    ray.current.setFromCamera(new THREE.Vector2(0, 0), camera)
-    ray.current.far = REACH
-    let hitId: string | null = null
-    for (const hit of ray.current.intersectObjects(scene.children, true)) {
-      if (!visibleInScene(hit.object)) continue // other rooms are mounted but hidden
-      let o: THREE.Object3D | null = hit.object
-      while (o && !o.userData.interactId) o = o.parent
-      hitId = o?.userData.interactId ?? null
-      break // only the nearest surface counts, so walls block what's behind them
-    }
+    const hitId = pick(new THREE.Vector2(0, 0))
     if (hitId !== focused.current) {
       focused.current = hitId
       cb.current.onFocus(hitId)
