@@ -1,6 +1,6 @@
 import { Preload } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { useCallback, useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react'
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, type MouseEvent, type ReactNode, type Ref } from 'react'
 import { isTouch, useTouch } from '../ui/touch'
 import { labOverlay, returnMode } from './overlay'
 import { Player, type Mode } from './Player'
@@ -168,6 +168,11 @@ export function LabWorld({ building, renderStation, suspended = false, onMenu, r
   const overlay = labOverlay(mode, { touch, peek: peek !== null })
   // Touch has no mouse to capture: tapping the card just starts walking by touch.
   const enter = overlay.enterBy === 'lock' ? lock : () => go('walking')
+  // Open the menu without the click also reaching what's behind the button (the card's veil enters the lab).
+  const openMenu = (e: MouseEvent) => {
+    e.stopPropagation()
+    onMenu?.()
+  }
 
   return (
     <div className="world">
@@ -229,7 +234,7 @@ export function LabWorld({ building, renderStation, suspended = false, onMenu, r
               <>
                 <p>Drag to walk · twist two fingers to turn · slide two fingers to look up or down · tap a station or door to use it</p>
                 <button>{overlay.card === 'start' ? 'Tap to enter the lab' : 'Tap to resume'}</button>
-                <button className="secondary" onClick={(e) => { e.stopPropagation(); onMenu?.() }}>Open the menu</button>
+                <button className="secondary" onClick={openMenu}>Open the menu</button>
               </>
             )}
           </div>
@@ -237,7 +242,7 @@ export function LabWorld({ building, renderStation, suspended = false, onMenu, r
       )}
 
       {overlay.menuButton && onMenu && (
-        <button className="menu-button" onClick={(e) => { e.stopPropagation(); onMenu() }}>
+        <button className="menu-button" onClick={openMenu}>
           Menu <kbd>M</kbd>
         </button>
       )}
