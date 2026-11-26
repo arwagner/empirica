@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import type { LabEvent } from '../../../core'
 import type { BenchProps } from '../../../ui/station/StationWorkspace'
 import { useLabSession } from '../../../ui/useLabSession'
+import { HitArea } from '../../../ui/HitArea'
+import { useHitRadius } from '../../../ui/touch'
 import type { PhysicsState } from '../engine'
 import { extension, liveQ, type OscState } from '../rigs/oscillator'
 import { PLANETS, type Planet } from '../world'
@@ -29,6 +31,7 @@ export function OscBench({ sandbox, apply }: BenchProps) {
   const s = state.rig.state as OscState
   const { log } = useLabSession()
   const svg = useRef<SVGSVGElement>(null)
+  const hitR = useHitRadius(svg, W)
   const [drag, setDrag] = useState(false)
   const [trace, setTrace] = useState<{ t: number; q: number }[]>([])
 
@@ -116,8 +119,11 @@ export function OscBench({ sandbox, apply }: BenchProps) {
               <line x1={PIVOT.x - 40} x2={PIVOT.x + 58} y1={PIVOT.y + (NATURAL + ext) * SPRING_PX} y2={PIVOT.y + (NATURAL + ext) * SPRING_PX} className="rest-line" />
             </>
           )}
-          <circle cx={bob.x} cy={bob.y} r={bobR} className={pendulum ? 'bob' : 'bob weight-bob'} onPointerDown={(e) => { e.preventDefault(); if (!s.released) setDrag(true) }}
-            role="slider" aria-label={pendulum ? 'Release angle' : 'Pull distance'} aria-valuenow={pendulum ? s.angleDeg : s.pull} />
+          <g onPointerDown={(e) => { e.preventDefault(); if (!s.released) setDrag(true) }}
+            role="slider" aria-label={pendulum ? 'Release angle' : 'Pull distance'} aria-valuenow={pendulum ? s.angleDeg : s.pull}>
+            <HitArea cx={bob.x} cy={bob.y} r={hitR} />
+            <circle cx={bob.x} cy={bob.y} r={bobR} className={pendulum ? 'bob' : 'bob weight-bob'} />
+          </g>
           {!s.released && !drag && <text x={bob.x + bobR + 10} y={bob.y + 4} className="hint">{pendulum ? 'drag to pull back' : 'drag down to stretch'}</text>}
         </svg>
       </div>

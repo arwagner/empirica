@@ -1,6 +1,8 @@
 import { Preload } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { useCallback, useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react'
+import { isTouch, useTouch } from '../ui/touch'
+import { labOverlay } from './overlay'
 import { Player, type Mode } from './Player'
 import type { Building, Interactable, Spawn } from './types'
 import './world.css'
@@ -21,11 +23,14 @@ interface Props {
   renderStation: (station: Interactable, leave: () => void) => ReactNode
   /** True while something (a menu) covers the world: releases the mouse and blocks input. */
   suspended?: boolean
+  /** Open the lab menu: the on-screen Menu button, and the way in on touch screens. */
+  onMenu?: () => void
   ref?: Ref<LabWorldHandle>
 }
 
 /** The walkable 3D lab with fly-in to 2D station workspaces. */
-export function LabWorld({ building, renderStation, suspended = false, ref }: Props) {
+export function LabWorld({ building, renderStation, suspended = false, onMenu, ref }: Props) {
+  const touch = useTouch()
   // Dev aid: ?room=<id> starts in that room.
   const [roomId, setRoomId] = useState(() => {
     const r = new URLSearchParams(location.search).get('room')
@@ -70,7 +75,8 @@ export function LabWorld({ building, renderStation, suspended = false, ref }: Pr
   const leave = useCallback(() => {
     if (modeRef.current !== 'station') return
     go('flyingOut')
-    lock()
+    // Recapture the mouse so you keep walking. A touch screen has no mouse to capture: you land in the lab view with its Menu button.
+    if (!isTouch()) lock()
   }, [go])
 
   useEffect(() => {
@@ -159,6 +165,8 @@ export function LabWorld({ building, renderStation, suspended = false, ref }: Pr
 
   const focused = room.interactables.find((i) => i.id === focusId)
   const station = room.interactables.find((i) => i.id === stationId)
+  const overlay = labOverlay(mode, { touch, peek: peek !== null })
+  const enter = overlay.enterBy === 'lock' ? lock : undefined
 
   return (
     <div className="world">
@@ -184,7 +192,7 @@ export function LabWorld({ building, renderStation, suspended = false, ref }: Pr
       )}
       {toast && <div className="toast">{toast}</div>}
       <div className={`fade ${fading ? 'on' : ''}`} aria-hidden="true" />
-      {mode === 'ready' && (
+      {overlay.readyPrompt && (
         <div className="ready" onClick={lock}>
           <div className="prompt">
             <kbd>Click</kbd> or move to look around
@@ -192,21 +200,36 @@ export function LabWorld({ building, renderStation, suspended = false, ref }: Pr
         </div>
       )}
 
-      {(mode === 'start' || (mode === 'paused' && peek === null)) && (
-        <div className="veil" onClick={lock}>
+      {overlay.card && (
+        <div className="veil" onClick={enter}>
           <div className="card">
             <h1>Empirica</h1>
-            <p className="sub">{mode === 'start' ? room.name : 'Paused'}</p>
-            <p>
-              <kbd>W</kbd>
-              <kbd>A</kbd>
-              <kbd>S</kbd>
-              <kbd>D</kbd> move · <kbd>Mouse</kbd> look · <kbd>Shift</kbd> run · <kbd>E</kbd> / <kbd>Click</kbd> use station ·{' '}
-              <kbd>M</kbd> menu · <kbd>N</kbd> notebook · <kbd>Esc</kbd> release mouse
-            </p>
-            <button>{mode === 'start' ? 'Click to enter the lab' : 'Click to resume'}</button>
+            <p className="sub">{overlay.card === 'start' ? room.name : 'Paused'}</p>
+            {overlay.enterBy === 'lock' ? (
+              <>
+                <p>
+                  <kbd>W</kbd>
+                  <kbd>A</kbd>
+                  <kbd>S</kbd>
+                  <kbd>D</kbd> move · <kbd>Mouse</kbd> look · <kbd>Shift</kbd> run · <kbd>E</kbd> / <kbd>Click</kbd> use station ·{' '}
+                  <kbd>M</kbd> menu · <kbd>N</kbd> notebook · <kbd>Esc</kbd> release mouse
+                </p>
+                <button>{overlay.card === 'start' ? 'Click to enter the lab' : 'Click to resume'}</button>
+              </>
+            ) : (
+              <>
+                <p>Pick a station or an experiment from the menu to start.</p>
+                <button onClick={onMenu}>Open the menu</button>
+              </>
+            )}
           </div>
         </div>
+      )}
+
+      {overlay.menuButton && onMenu && (
+        <button className="menu-button" onClick={(e) => { e.stopPropagation(); onMenu() }}>
+          Menu <kbd>M</kbd>
+        </button>
       )}
 
       {station && (

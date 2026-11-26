@@ -19,3 +19,7 @@
 .guided .hint { flex-basis: 100%; padding: 8px 10px; border-radius: 8px; background: #ffd25a2e; }
 .guided .actions button, .guided .summary button { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--ui-line, #0002); background: transparent; color: inherit; cursor: pointer; font: inherit; }
 .guided .summary button { align-self: flex-start; background: var(--ui-accent, #2f7d6d); color: var(--ui-accent-fg, #fff); border: 0; }
+/* Phones: the guide sits above the bench, full width, and scrolls with the station. */
+@media (max-width: 760px), (max-height: 500px) {
+  .guided { order: -1; width: 100%; border-left: 0; border-bottom: 1px solid var(--ui-line, #0001); overflow: visible; }
+}

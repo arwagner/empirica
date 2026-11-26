@@ -79,3 +79,12 @@
 .bio-bench .disc-label { font-size: 9px; font-weight: 700; fill: #555; }
 .bio-bench .mini-graph.wide { grid-column: span 2; }
 .bio-bench .mini-graph.wide svg { width: 100%; }
+/* Dragging the lamp must not scroll the page. */
+.bio-bench .stage svg.drag-surface { touch-action: none; user-select: none; }
+/* Phones: the bench grows with its contents and the station scrolls. */
+@media (max-width: 760px), (max-height: 500px) {
+  .bio-bench { height: auto; }
+  .bio-bench .stage { flex: none; min-height: 0; }
+  .bio-bench.mic .mic-side { overflow: visible; }
+  .bio-bench.gen { overflow: visible; }
+}

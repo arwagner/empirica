@@ -8,6 +8,7 @@ import { StationWorkspace } from '../station/StationWorkspace'
 import { BENCHES } from '../benches'
 import { LabSessionProvider } from '../session'
 import { Menu, type MenuTab } from './Menu'
+import '../touch.css'
 import './shell.css'
 
 const typing = (e: KeyboardEvent) => {
@@ -53,6 +54,7 @@ function Shell({ building }: { building: Building }) {
         ref={world}
         building={building}
         suspended={menu !== null}
+        onMenu={() => setMenu('experiments')}
         renderStation={(station: Interactable, leave) => (
           <StationFrame station={station} onLeave={leave} onNotebook={() => setMenu('notebook')}>
             {(() => {
