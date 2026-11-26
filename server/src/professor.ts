@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto'
 import { z } from 'zod'
-import { WIRE_LIMITS, type ChatResponse, type Notice, type TicketResponse } from '../../src/professor/wire'
+import { UNAVAILABLE, WIRE_LIMITS, type ChatResponse, type Notice, type TicketResponse } from '../../src/professor/wire'
 import type { Daily } from './budget'
 import type { Catalog } from './catalog'
 import type { IssueTracker } from './github'
@@ -36,7 +36,7 @@ export const NOTICES: Record<Notice, string> = {
   budget: "I'm resting until tomorrow; I've answered all the questions I can for today. Keep experimenting and write down what you find!",
   screened: SCREEN_REPLY.injection,
   'off-topic': "That's outside what I can help with. I'm here for the lab: its equipment, its science and your experiments. What are you working on?",
-  unavailable: "The professor is unavailable right now. Try again later; the rest of the lab still works.",
+  unavailable: UNAVAILABLE,
   'ticket-cap': 'The lab has taken all the equipment requests it can for today. Ask me again tomorrow and we can send it then.',
   expired: 'That draft has expired or was already sent. Ask me to draft it again.',
 }

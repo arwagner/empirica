@@ -1,6 +1,4 @@
-import type { ChatRequest, ChatResponse, Draft, TicketResponse } from './wire'
-
-export const UNAVAILABLE = "The professor is unavailable right now. The rest of the lab still works; try again later."
+import { UNAVAILABLE, type ChatRequest, type ChatResponse, type Draft, type TicketResponse } from './wire'
 
 const unavailable = { kind: 'notice' as const, reason: 'unavailable' as const, text: UNAVAILABLE }
 

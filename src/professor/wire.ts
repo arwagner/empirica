@@ -23,6 +23,9 @@ export interface ChatRequest {
   message: string
 }
 
+/** What the student sees when the professor can't answer: the server is down, or a model call failed. */
+export const UNAVAILABLE = 'The professor is unavailable right now. The rest of the lab still works; try again later.'
+
 export type Notice = 'invalid' | 'too-long' | 'rate-limit' | 'budget' | 'screened' | 'off-topic' | 'unavailable' | 'ticket-cap' | 'expired'
 
 export type ChatResponse =

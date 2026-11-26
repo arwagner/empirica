@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
-import { professorApi, UNAVAILABLE } from './api'
+import { professorApi } from './api'
+import { UNAVAILABLE } from './wire'
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 

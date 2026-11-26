@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { professorApi, UNAVAILABLE, type ProfessorApi } from '../../professor/api'
+import { professorApi, type ProfessorApi } from '../../professor/api'
+import { UNAVAILABLE } from '../../professor/wire'
 import { MAX_MESSAGE_CHARS, type DraftState } from '../../professor/conversation'
 import { useLabSession } from '../useLabSession'
 import { useProfessor } from './useProfessor'
