@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from 'node:crypto'
+import { createHmac } from 'node:crypto'
 import { z } from 'zod'
 import { WIRE_LIMITS, type ChatResponse, type Notice, type TicketResponse } from '../../src/professor/wire'
 import type { Daily } from './budget'
@@ -7,6 +7,7 @@ import type { IssueTracker } from './github'
 import { worstCaseUsd, type ProfessorModel, type TopicChecker, type Turn } from './models'
 import { leaksPrompt } from './prompt'
 import type { RateLimiter } from './rateLimit'
+import { safeEqual } from './safeEqual'
 import { SCREEN_REPLY, screenText } from './screen'
 import { commentBody, DraftSchema, draftIsClean, issueBody, issueTitle, sameEquipment, signDraft, SUGGESTION_LABEL, verifyDraft } from './tickets'
 
@@ -69,12 +70,7 @@ export function createProfessor(deps: ProfessorDeps): Professor {
   const now = deps.now ?? Date.now
   const log = deps.log ?? (() => {})
   const signReply = (text: string) => createHmac('sha256', deps.secret).update(`reply:${text}`).digest('base64url')
-  const replySigned = (text: string, sig: string | undefined) => {
-    if (!sig) return false
-    const a = Buffer.from(signReply(text))
-    const b = Buffer.from(sig)
-    return a.length === b.length && timingSafeEqual(a, b)
-  }
+  const replySigned = (text: string, sig: string | undefined) => !!sig && safeEqual(signReply(text), sig)
   /** Drafts already sent, so one Confirm can't file twice. Forgotten once their token would have expired anyway. */
   const usedDrafts = new Map<string, number>()
 

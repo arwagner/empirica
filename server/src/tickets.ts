@@ -1,5 +1,6 @@
-import { createHmac, timingSafeEqual } from 'node:crypto'
+import { createHmac } from 'node:crypto'
 import { z } from 'zod'
+import { safeEqual } from './safeEqual'
 import { screenText } from './screen'
 
 export const SUGGESTION_LABEL = 'professor-suggestion'
@@ -45,9 +46,7 @@ export function verifyDraft(secret: string, draft: Draft, token: string, now: nu
   const [exp, sig] = token.split('.')
   const expiresAt = Number(exp)
   if (!Number.isFinite(expiresAt) || expiresAt < now || !sig) return false
-  const want = Buffer.from(mac(secret, draft, expiresAt))
-  const got = Buffer.from(sig)
-  return want.length === got.length && timingSafeEqual(want, got)
+  return safeEqual(mac(secret, draft, expiresAt), sig)
 }
 
 const mac = (secret: string, d: Draft, exp: number) =>
