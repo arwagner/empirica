@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
+import { afterEach, vi } from 'vitest'
 import { physics } from '..'
+import { TOUCH_QUERY } from '../../../ui/touch'
 import { NotebookPanel } from '../../../ui/notebook/NotebookPanel'
 import { LabSessionProvider } from '../../../ui/session'
 import { StationWorkspace } from '../../../ui/station/StationWorkspace'
@@ -17,6 +19,11 @@ const bench = (rig: string) =>
       <Notebook />
     </LabSessionProvider>,
   )
+afterEach(() => {
+  vi.unstubAllGlobals()
+  vi.restoreAllMocks()
+})
+
 const log = () => within(screen.getByRole('region', { name: 'Lab notebook' }))
 
 test('ramp bench: settings log to the notebook; release starts the run', () => {
@@ -34,6 +41,19 @@ test('track bench: explosion mode, release the spring, momentum readout appears'
   fireEvent.click(screen.getByRole('button', { name: 'Release spring' }))
   expect(log().getByText(/The spring pushes them apart/)).toBeInTheDocument()
   expect(screen.getByText(/Momentum before → after/).parentElement).toHaveTextContent('0.000 → 0.000')
+})
+
+test('track bench on a phone: each push arrow\'s hit area stays clear of its glider, so touching a glider moves it', () => {
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: q === TOUCH_QUERY, addEventListener() {}, removeEventListener() {} }))
+  vi.spyOn(SVGElement.prototype, 'getBoundingClientRect').mockReturnValue({ width: 340 } as DOMRect)
+  bench('track')
+  for (const id of ['A', 'B']) {
+    const hit = screen.getByRole('slider', { name: `Glider ${id} push` }).querySelector('circle.hit')!
+    const body = screen.getByRole('slider', { name: `Glider ${id} position` }).querySelector('rect')!
+    const r = Number(hit.getAttribute('r'))
+    expect(r * 2 * (340 / 900)).toBeGreaterThanOrEqual(43) // a finger-sized target at 340px wide
+    expect(Number(hit.getAttribute('cy')) + r).toBeLessThanOrEqual(Number(body.getAttribute('y')))
+  }
 })
 
 test('oscillator bench: switch to the spring, see it stretch, release', () => {

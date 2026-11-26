@@ -109,7 +109,8 @@ export function TrackBench({ sandbox, apply }: BenchProps) {
                 </g>
                 {!s.launched && s.mode === 'push' && (
                   <g className="push" onPointerDown={(e) => { e.preventDefault(); setDrag({ glider: g.id, what: 'push' }) }} role="slider" aria-label={`Glider ${g.id} push`} aria-valuenow={push}>
-                    <HitArea cx={px(g.x) + push * 100} cy={TRACK_Y - h - 18} r={hitR} />
+                    {/* Lifted so its bottom edge meets the glider's top: drawn over the glider, a centred hit area would take touches meant to move it. */}
+                    <HitArea cx={px(g.x) + push * 100} cy={TRACK_Y - h - 18 - Math.max(0, hitR - 18)} r={hitR} />
                     <line x1={px(g.x)} y1={TRACK_Y - h - 18} x2={px(g.x) + push * 100} y2={TRACK_Y - h - 18} stroke={COLOR[g.id]} />
                     <circle cx={px(g.x) + push * 100} cy={TRACK_Y - h - 18} r="8" fill={COLOR[g.id]} />
                     <text x={px(g.x) + push * 100} y={TRACK_Y - h - 32} className="scale">{push.toFixed(1)} m/s</text>
