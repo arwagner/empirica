@@ -24,7 +24,7 @@ function Shell({ building }: { building: Building }) {
   /** Each station's bench, remembered between visits for this session. */
   const benches = useRef(new Map<string, unknown>())
   /** The station the player is working at, so the professor knows where they are. */
-  const [here, setHere] = useState<string | null>(null)
+  const [currentStationId, setCurrentStationId] = useState<string | null>(null)
   const stations = building.rooms.flatMap((r) => r.interactables.filter((i) => i.kind === 'station').map((i) => ({ ...i, room: r.name })))
 
   useEffect(() => {
@@ -57,7 +57,7 @@ function Shell({ building }: { building: Building }) {
         building={building}
         suspended={menu !== null}
         onMenu={() => setMenu('experiments')}
-        onStation={setHere}
+        onStation={setCurrentStationId}
         renderStation={(station: Interactable, leave) => (
           <StationFrame station={station} onLeave={leave} onNotebook={() => setMenu('notebook')} onProfessor={() => setMenu('professor')}>
             {(() => {
@@ -83,7 +83,7 @@ function Shell({ building }: { building: Building }) {
           stations={stations}
           onStartExperiment={start}
           onGoToStation={goTo}
-          here={stations.find((s) => s.id === here)}
+          currentStation={stations.find((s) => s.id === currentStationId)}
         />
       )}
     </>

@@ -24,10 +24,10 @@ interface Props {
   onStartExperiment: (e: Experiment) => void
   onGoToStation: (id: string) => void
   /** The station the student is at, for the professor. */
-  here?: { id: string; name: string }
+  currentStation?: Pick<Interactable, 'id' | 'name'>
 }
 
-export function Menu({ tab, onTab, onClose, experiments, domains, stations, onStartExperiment, onGoToStation, here }: Props) {
+export function Menu({ tab, onTab, onClose, experiments, domains, stations, onStartExperiment, onGoToStation, currentStation }: Props) {
   const { notebook, note } = useLabSession()
   return (
     <div className="menu-veil" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -69,7 +69,7 @@ export function Menu({ tab, onTab, onClose, experiments, domains, stations, onSt
             </div>
           )}
           {tab === 'notebook' && <NotebookPanel notebook={notebook} onAddNote={note} />}
-          {tab === 'professor' && <ProfessorPanel station={here} />}
+          {tab === 'professor' && <ProfessorPanel station={currentStation} />}
         </div>
       </div>
     </div>
