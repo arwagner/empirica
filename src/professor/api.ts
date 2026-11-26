@@ -4,6 +4,9 @@ export const UNAVAILABLE = "The professor is unavailable right now. The rest of 
 
 const unavailable = { kind: 'notice' as const, reason: 'unavailable' as const, text: UNAVAILABLE }
 
+/** A static host answers unknown paths with HTML; only the server answers with JSON. */
+const isJson = (res: Response) => (res.headers.get('content-type') ?? '').includes('application/json')
+
 export interface ProfessorApi {
   /** Is the professor's server up? */
   health(): Promise<boolean>
@@ -19,7 +22,7 @@ export function professorApi(fetchFn: typeof fetch = (...a) => fetch(...a), base
   const post = async <T>(path: string, body: unknown): Promise<T | typeof unavailable> => {
     try {
       const res = await fetchFn(`${base}${path}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
-      if (!(res.headers.get('content-type') ?? '').includes('application/json')) return unavailable
+      if (!isJson(res)) return unavailable
       const json = await res.json()
       return json && typeof json.kind === 'string' ? (json as T) : unavailable
     } catch {
@@ -30,7 +33,7 @@ export function professorApi(fetchFn: typeof fetch = (...a) => fetch(...a), base
     async health() {
       try {
         const res = await fetchFn(`${base}/health`)
-        return res.ok && (res.headers.get('content-type') ?? '').includes('application/json') && (await res.json()).ok === true
+        return res.ok && isJson(res) && (await res.json()).ok === true
       } catch {
         return false
       }
