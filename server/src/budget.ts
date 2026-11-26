@@ -75,9 +75,15 @@ export class Daily {
     return c && c.day === day ? c : { day, spentUsd: 0, issuesFiled: 0 }
   }
 
-  /** Is there room for a call that could cost up to `worstCaseUsd`? */
-  canSpend(worstCaseUsd: number): boolean {
-    return this.today().spentUsd + worstCaseUsd <= this.budgetUsd
+  /**
+   * Holds `usd` against today's budget if it fits, so requests running at the same time can't all
+   * pass the check before any of them is charged. Settle afterwards with `spend(actual - usd)`.
+   */
+  reserve(usd: number): boolean {
+    const c = this.today()
+    if (c.spentUsd + usd > this.budgetUsd) return false
+    this.store.save({ ...c, spentUsd: c.spentUsd + usd })
+    return true
   }
 
   spend(usd: number) {
@@ -85,13 +91,17 @@ export class Daily {
     this.store.save({ ...c, spentUsd: c.spentUsd + usd })
   }
 
-  canFileIssue(): boolean {
-    return this.today().issuesFiled < this.maxIssues
+  /** Takes one of today's new-issue slots if any is left. Give it back with `releaseIssue()` if filing fails. */
+  reserveIssue(): boolean {
+    const c = this.today()
+    if (c.issuesFiled >= this.maxIssues) return false
+    this.store.save({ ...c, issuesFiled: c.issuesFiled + 1 })
+    return true
   }
 
-  issueFiled() {
+  releaseIssue() {
     const c = this.today()
-    this.store.save({ ...c, issuesFiled: c.issuesFiled + 1 })
+    this.store.save({ ...c, issuesFiled: Math.max(0, c.issuesFiled - 1) })
   }
 
   snapshot(): DayCounters {

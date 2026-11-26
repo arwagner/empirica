@@ -57,6 +57,21 @@ test('spend from each call is counted against the day', async () => {
   expect(deps.daily.snapshot().spentUsd).toBeCloseTo(0.0101)
 })
 
+test('chats running at the same time each hold their worst case, so together they cannot overspend the day', async () => {
+  let release = () => {}
+  const gate = new Promise<void>((r) => (release = r))
+  const { professor, deps, calls } = setup({
+    topic: { check: async () => (await gate, { onTopic: true, costUsd: 0 }) },
+  })
+  deps.daily.spend(0.28)
+  const pending = Array.from({ length: 10 }, (_, i) => professor.chat(ask('Why lilac?'), `198.51.100.${i}`))
+  release()
+  const results = await Promise.all(pending)
+  expect(results.filter((r) => r.kind === 'notice' && r.reason === 'budget').length).toBeGreaterThan(0)
+  expect(calls.model).toBeLessThan(10)
+  expect(deps.daily.snapshot().spentUsd).toBeLessThanOrEqual(0.3)
+})
+
 test('instructions smuggled into notebook entries are withheld from the model', async () => {
   let seen: string[] = []
   const { professor } = setup({
@@ -156,8 +171,28 @@ describe('equipment tickets', () => {
 
   test('at most five new issues a day across everyone', async () => {
     const { professor, deps, draft } = await drafted()
-    for (let i = 0; i < 5; i++) deps.daily.issueFiled()
+    for (let i = 0; i < 5; i++) deps.daily.reserveIssue()
     expect(await professor.confirmTicket(draft, IP)).toMatchObject({ kind: 'notice', reason: 'ticket-cap' })
+  })
+
+  test('Confirms arriving at the same time cannot file past the daily cap', async () => {
+    const { professor, deps, calls, draft: first, advance } = await drafted()
+    advance(1) // a later draft of the same equipment carries a different token
+    const second = await professor.chat(ask('Can I measure radioactivity?'), IP)
+    if (second.kind !== 'reply' || !second.draft) throw new Error('expected a draft')
+    for (let i = 0; i < 4; i++) deps.daily.reserveIssue()
+    const results = await Promise.all([professor.confirmTicket(first, IP), professor.confirmTicket(second.draft, '198.51.100.1')])
+    expect(results.map((r) => (r.kind === 'notice' ? r.reason : r.kind)).sort()).toEqual(['filed', 'ticket-cap'])
+    expect(calls.create).toHaveLength(1)
+  })
+
+  test('a failed GitHub call gives the day\'s issue slot back', async () => {
+    const { professor, deps, draft } = await drafted()
+    deps.tracker!.create = async () => {
+      throw new Error('GitHub down')
+    }
+    expect(await professor.confirmTicket(draft, IP)).toMatchObject({ reason: 'unavailable' })
+    expect(deps.daily.snapshot().issuesFiled).toBe(0)
   })
 
   test('a draft with problem text is never offered', async () => {

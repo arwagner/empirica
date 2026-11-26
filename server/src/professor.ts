@@ -99,16 +99,18 @@ export function createProfessor(deps: ProfessorDeps): Professor {
       const history: Turn[] = [...req.history.map(({ role, text }) => ({ role, text })), { role: 'user', text: req.message }]
       const ctx = { station: req.station, notebook }
 
-      if (!deps.daily.canSpend(worstCaseUsd(deps.catalog, history, ctx))) return notice('budget')
+      const reserved = worstCaseUsd(deps.catalog, history, ctx)
+      if (!deps.daily.reserve(reserved)) return notice('budget')
 
+      let spent = 0
       try {
         const lastReply = req.history.findLast((t) => t.role === 'assistant')?.text
         const topic = await deps.topic.check(req.message, lastReply)
-        deps.daily.spend(topic.costUsd)
+        spent += topic.costUsd
         if (!topic.onTopic) return notice('off-topic')
 
         const out = await deps.model.reply(history, ctx)
-        deps.daily.spend(out.costUsd)
+        spent += out.costUsd
         let text = out.refused ? REFUSED : out.text || (out.draft ? EMPTY_WITH_DRAFT : REFUSED)
         let draft = out.draft && draftIsClean(out.draft) ? out.draft : undefined
         if (leaksPrompt(text)) {
@@ -126,6 +128,8 @@ export function createProfessor(deps: ProfessorDeps): Professor {
       } catch (e) {
         log(`model call failed: ${(e as Error).message}`)
         return notice('unavailable')
+      } finally {
+        deps.daily.spend(spent - reserved)
       }
     },
 
@@ -148,13 +152,18 @@ export function createProfessor(deps: ProfessorDeps): Professor {
           await deps.tracker.comment(dup.number, commentBody(draft))
           return { kind: 'commented', number: dup.number, url: dup.url }
         }
-        if (!deps.daily.canFileIssue()) {
+        // Take the slot before the GitHub call, so two Confirms at once can't both file the last one.
+        if (!deps.daily.reserveIssue()) {
           usedDrafts.delete(token)
           return notice('ticket-cap')
         }
-        const issue = await deps.tracker.create({ title: issueTitle(draft), body: issueBody(draft), labels: [SUGGESTION_LABEL] })
-        deps.daily.issueFiled()
-        return { kind: 'filed', number: issue.number, url: issue.url }
+        try {
+          const issue = await deps.tracker.create({ title: issueTitle(draft), body: issueBody(draft), labels: [SUGGESTION_LABEL] })
+          return { kind: 'filed', number: issue.number, url: issue.url }
+        } catch (e) {
+          deps.daily.releaseIssue()
+          throw e
+        }
       } catch (e) {
         usedDrafts.delete(token)
         log(`filing failed: ${(e as Error).message}`)
