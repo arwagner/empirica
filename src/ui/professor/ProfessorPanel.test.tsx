@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 import type { ProfessorApi } from '../../professor/api'
 import { LabSessionProvider } from '../session'
+import { TOUCH_QUERY } from '../touch'
 import { ProfessorPanel } from './ProfessorPanel'
 
 const DRAFT = { equipment: 'Geiger counter', question: 'How radioactive is a banana?', measures: 'Counts per minute', location: 'Physics Hall', phone: 'Tap Start.' }
@@ -26,6 +27,7 @@ const say = async (text: string) => {
 }
 
 beforeEach(() => sessionStorage.clear())
+afterEach(() => vi.unstubAllGlobals())
 
 test('sends the message with the station and shows the reply', async () => {
   const api = fakeApi()
@@ -80,4 +82,21 @@ test('the conversation survives reopening the panel, and New conversation clears
   expect(screen.getByText('Why lilac?')).toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'New conversation' }))
   await waitFor(() => expect(screen.queryByText('Why lilac?')).not.toBeInTheDocument())
+})
+
+test('Enter sends from a keyboard, but types a new line on a phone, where Send is the way to send', async () => {
+  const box = () => screen.getByRole('textbox', { name: 'Message to the professor' })
+  const desk = fakeApi()
+  const { unmount } = show(desk)
+  fireEvent.change(box(), { target: { value: 'Why lilac?' } })
+  await act(async () => void fireEvent.keyDown(box(), { key: 'Enter' }))
+  expect(desk.chat).toHaveBeenCalledTimes(1)
+  unmount()
+
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: q === TOUCH_QUERY, addEventListener() {}, removeEventListener() {} }))
+  const phone = fakeApi()
+  show(phone)
+  fireEvent.change(box(), { target: { value: 'Why lilac?' } })
+  await act(async () => void fireEvent.keyDown(box(), { key: 'Enter' }))
+  expect(phone.chat).not.toHaveBeenCalled()
 })

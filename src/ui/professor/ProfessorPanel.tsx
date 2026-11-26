@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { professorApi, type ProfessorApi } from '../../professor/api'
 import { UNAVAILABLE } from '../../professor/wire'
 import { MAX_MESSAGE_CHARS, type DraftState } from '../../professor/conversation'
+import { useTouch } from '../touch'
 import { useLabSession } from '../useLabSession'
 import { useProfessor } from './useProfessor'
 import './professor.css'
@@ -60,6 +61,7 @@ export function ProfessorPanel({ station, api = defaultApi }: Props) {
   const { notebook } = useLabSession()
   const chat = useProfessor(api, station?.id, notebook)
   const [text, setText] = useState('')
+  const touch = useTouch()
   const log = useRef<HTMLDivElement>(null)
   // Keep the newest message in view.
   useEffect(() => {
@@ -121,7 +123,8 @@ export function ProfessorPanel({ station, api = defaultApi }: Props) {
           rows={2}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) submit(e)
+            // A phone keyboard has no Shift, so there Enter types a new line and Send sends.
+            if (e.key === 'Enter' && !e.shiftKey && !touch) submit(e)
           }}
         />
         <button className="primary" type="submit" disabled={!text.trim() || chat.busy}>
