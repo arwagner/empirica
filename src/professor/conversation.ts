@@ -1,5 +1,5 @@
 import { formatElapsed, formatMeasurement, type Notebook } from '../core'
-import type { ChatRequest, ChatResponse, Draft, TicketResponse } from './wire'
+import { WIRE_LIMITS, type ChatRequest, type ChatResponse, type Draft, type TicketResponse } from './wire'
 
 /** A drafted equipment request and where it's got to. */
 export interface DraftState {
@@ -55,19 +55,16 @@ export function historyFor(c: Conversation): ChatRequest['history'] {
   return out
 }
 
-export const NOTEBOOK_LINES = 40
-export const NOTEBOOK_LINE_CHARS = 300
-
 /** The newest notebook entries as short lines of text, for the professor to read. */
 export function notebookLines(nb: Notebook): string[] {
-  return nb.entries.slice(-NOTEBOOK_LINES).map((e) => {
+  return nb.entries.slice(-WIRE_LIMITS.notebookEntries).map((e) => {
     const body =
       e.kind === 'measurement' ? `measured ${e.text}: ${formatMeasurement(e.measurement)} (${e.measurement.instrument})` : e.kind === 'note' ? `note: ${e.text}` : `${e.kind}: ${e.text}`
-    return `[${formatElapsed(e.t)}] ${body}`.slice(0, NOTEBOOK_LINE_CHARS)
+    return `[${formatElapsed(e.t)}] ${body}`.slice(0, WIRE_LIMITS.notebookEntryChars)
   })
 }
 
-export const MAX_MESSAGE_CHARS = 1000
+export const MAX_MESSAGE_CHARS = WIRE_LIMITS.messageChars
 
 const KEY = 'empirica.professor'
 

@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { z } from 'zod'
-import type { ChatResponse, Notice, TicketResponse } from '../../src/professor/wire'
+import { WIRE_LIMITS, type ChatResponse, type Notice, type TicketResponse } from '../../src/professor/wire'
 import type { Daily } from './budget'
 import type { Catalog } from './catalog'
 import type { IssueTracker } from './github'
@@ -11,11 +11,9 @@ import { SCREEN_REPLY, screenText } from './screen'
 import { commentBody, DraftSchema, draftIsClean, issueBody, issueTitle, sameEquipment, signDraft, SUGGESTION_LABEL, verifyDraft } from './tickets'
 
 export const LIMITS = {
-  messageChars: 1000,
+  ...WIRE_LIMITS,
   replyChars: 4000,
   turns: 20,
-  notebookEntries: 40,
-  notebookEntryChars: 300,
   draftTtlMs: 60 * 60 * 1000,
 }
 

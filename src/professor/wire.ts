@@ -1,5 +1,12 @@
 /** What the browser and the empirica-api server send each other. Shared by both sides. */
 
+/** Sizes the server enforces; the browser trims to the same, so a normal request never trips them. */
+export const WIRE_LIMITS = {
+  messageChars: 1000,
+  notebookEntries: 40,
+  notebookEntryChars: 300,
+} as const
+
 export interface Draft {
   equipment: string
   question: string
