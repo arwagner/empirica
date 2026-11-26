@@ -77,16 +77,16 @@ export class TouchWalk {
     const out = none()
     if (!f) return out
     if (Math.hypot(p.x - f.startX, p.y - f.startY) > TAP_SLOP_PX) f.tap = false
-    const pair = [...this.fingers.entries()]
-    if (pair.length === 1) {
+    const down = [...this.fingers.entries()]
+    if (down.length === 1) {
       // Drag-the-floor: until it's clearly a drag, a jittery tap shouldn't walk you anywhere.
       if (!f.tap) {
         out.forward = (p.y - f.y) * METRES_PER_PX
         out.strafe = (f.x - p.x) * METRES_PER_PX
       }
-    } else if (pair.length >= 2) {
+    } else if (down.length >= 2) {
       // Only the first two fingers steer; a third is ignored.
-      const [[idA, a], [idB, b]] = pair
+      const [[idA, a], [idB, b]] = down
       if (p.id === idA || p.id === idB) {
         const other = p.id === idA ? b : a
         const before = Math.atan2(other.y - f.y, other.x - f.x)
