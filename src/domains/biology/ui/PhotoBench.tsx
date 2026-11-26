@@ -3,6 +3,8 @@ import type { LabEvent, RigState } from '../../../core'
 import type { BenchProps } from '../../../ui/station/StationWorkspace'
 import { usePlayback } from '../../../ui/usePlayback'
 import { useLabSession } from '../../../ui/useLabSession'
+import { HitArea } from '../../../ui/HitArea'
+import { useHitRadius } from '../../../ui/touch'
 import { bubbleRate, FILTERS, lightLevel, type Filter, type PhotoState } from '../rigs/photosynthesis'
 import './biology-bench.css'
 
@@ -16,6 +18,7 @@ export function PhotoBench({ sandbox, apply }: BenchProps) {
   const s = state.rig.state as PhotoState
   const { log } = useLabSession()
   const svg = useRef<SVGSVGElement>(null)
+  const hitR = useHitRadius(svg, 900)
   const [drag, setDrag] = useState(false)
   const act = (a: Parameters<typeof apply>[0], quiet = false) => apply(a, { quiet })
   const pb = usePlayback((secs) => {
@@ -43,7 +46,7 @@ export function PhotoBench({ sandbox, apply }: BenchProps) {
   return (
     <div className="bio-bench">
       <div className="stage">
-        <svg ref={svg} viewBox="0 0 900 320" onPointerMove={onMove} onPointerUp={endDrag} onPointerLeave={endDrag} aria-label="Pondweed tank and lamp">
+        <svg ref={svg} className="drag-surface" viewBox="0 0 900 320" onPointerMove={onMove} onPointerUp={endDrag} onPointerLeave={endDrag} aria-label="Pondweed tank and lamp">
           <rect x={TANK_X} y="70" width="200" height="200" rx="6" fill="#d8ecf2" stroke="#7fa9b5" strokeWidth="3" />
           <path d={`M ${TANK_X + 90} 250 V 120 M ${TANK_X + 90} 140 l -20 -14 M ${TANK_X + 90} 170 l 22 -12 M ${TANK_X + 90} 200 l -18 -12 M ${TANK_X + 90} 225 l 20 -10`} stroke="#3f8f3a" strokeWidth="5" strokeLinecap="round" fill="none" />
           <path d={`M ${TANK_X + 70} 80 L ${TANK_X + 110} 80 L ${TANK_X + 100} 118 L ${TANK_X + 80} 118 Z`} fill="#ffffff88" stroke="#7fa9b5" strokeWidth="2" />
@@ -53,6 +56,7 @@ export function PhotoBench({ sandbox, apply }: BenchProps) {
           {s.filter !== 'white' && <rect x={TANK_X + 215} y="80" width="10" height="180" fill={FILTER_COLOR[s.filter]} stroke="#0002" />}
           {s.lamp && <polygon points={`${lampX - 20},150 ${TANK_X + 200},90 ${TANK_X + 200},250 ${lampX - 20},190`} fill="#fff3a8" opacity={Math.min(0.5, lightLevel(s) * 0.6 + 0.05)} />}
           <g className="lamp" onPointerDown={(e) => { e.preventDefault(); setDrag(true) }} role="slider" aria-label="Lamp distance" aria-valuenow={s.distance} aria-valuemin={5} aria-valuemax={100} style={{ cursor: 'ew-resize' }}>
+            <HitArea cx={lampX - 5} cy={170} r={hitR} />
             <path d={`M ${lampX + 12} 150 L ${lampX - 22} 125 L ${lampX - 22} 215 L ${lampX + 12} 190 Z`} fill="#c0392b" />
             <circle cx={lampX - 18} cy="170" r="13" fill={s.lamp ? '#fff3c4' : '#ccc'} stroke="#999" />
             <rect x={lampX + 10} y="160" width="10" height="110" fill="#555" />

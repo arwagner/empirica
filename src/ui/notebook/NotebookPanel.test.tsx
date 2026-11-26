@@ -51,3 +51,17 @@ test('exports markdown as a download', () => {
   expect(create).toHaveBeenCalledOnce()
   expect(click).toHaveBeenCalledOnce()
 })
+
+test('a chart reading shows on tap and stays when the finger lifts; a mouse leaving hides it', () => {
+  const { container } = render(<NotebookPanel notebook={sample()} onAddNote={() => {}} />)
+  const area = container.querySelector('.plot rect')!
+  const tip = () => container.querySelector('.plot .tip')
+  expect(tip()).toBeNull()
+  fireEvent.pointerDown(area, { pointerType: 'touch', clientX: 0 })
+  expect(tip()).toHaveTextContent('21 °C at 00:01')
+  fireEvent.pointerLeave(area, { pointerType: 'touch' })
+  expect(tip()).not.toBeNull()
+  fireEvent.pointerMove(area, { pointerType: 'mouse', clientX: 0 })
+  fireEvent.pointerLeave(area, { pointerType: 'mouse' })
+  expect(tip()).toBeNull()
+})

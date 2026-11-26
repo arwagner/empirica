@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import type { LabEvent } from '../../../core'
 import type { BenchProps } from '../../../ui/station/StationWorkspace'
 import { useLabSession } from '../../../ui/useLabSession'
+import { HitArea } from '../../../ui/HitArea'
+import { useHitRadius } from '../../../ui/touch'
 import type { PhysicsState } from '../engine'
 import { BALLS, type Ball, type LauncherState } from '../rigs/launcher'
 import { PLANETS, type Planet } from '../world'
@@ -22,6 +24,7 @@ export function LauncherBench({ sandbox, apply }: BenchProps) {
   const s = state.rig.state as LauncherState
   const { log } = useLabSession()
   const svg = useRef<SVGSVGElement>(null)
+  const hitR = useHitRadius(svg, W)
   const [drag, setDrag] = useState<null | 'angle' | 'target'>(null)
   const [trail, setTrail] = useState<[number, number][]>([])
 
@@ -79,6 +82,7 @@ export function LauncherBench({ sandbox, apply }: BenchProps) {
             </g>
           ))}
           <g className="target" onPointerDown={(e) => { e.preventDefault(); setDrag('target') }} role="slider" aria-label="Target position" aria-valuenow={s.targetX}>
+            <HitArea cx={sx(s.targetX)} cy={FLOOR} r={hitR} />
             <ellipse cx={sx(s.targetX)} cy={FLOOR} rx={0.25 * PX} ry="5" fill="#c0392b" />
             <ellipse cx={sx(s.targetX)} cy={FLOOR} rx={0.15 * PX} ry="3" fill="#f4f1e8" />
             <ellipse cx={sx(s.targetX)} cy={FLOOR} rx={0.06 * PX} ry="1.5" fill="#c0392b" />
@@ -94,8 +98,11 @@ export function LauncherBench({ sandbox, apply }: BenchProps) {
           {s.height > 0 && <rect x={X0 - 22} y={sy(s.height)} width="44" height={s.height * PX} className="platform" />}
           <line x1={base.x} y1={base.y} x2={tip.x} y2={tip.y} className="barrel" />
           <circle cx={base.x} cy={base.y} r="12" className="launcher-base" />
-          <circle cx={tip.x} cy={tip.y} r="9" className="handle" onPointerDown={(e) => { e.preventDefault(); setDrag('angle') }}
-            role="slider" aria-label="Launch angle handle" aria-valuenow={s.angleDeg} aria-valuemin={0} aria-valuemax={90} />
+          <g onPointerDown={(e) => { e.preventDefault(); setDrag('angle') }}
+            role="slider" aria-label="Launch angle handle" aria-valuenow={s.angleDeg} aria-valuemin={0} aria-valuemax={90}>
+            <HitArea cx={tip.x} cy={tip.y} r={hitR} />
+            <circle cx={tip.x} cy={tip.y} r="9" className="handle" />
+          </g>
           <text x={base.x + 20} y={base.y + 26} className="angle-label">{s.angleDeg}°</text>
           {(s.flying || s.landed) && <circle cx={sx(s.x)} cy={sy(s.y) - ballR} r={ballR} className="ball" />}
           {!s.flying && !s.landed && !drag && <text x={tip.x + 16} y={tip.y - 8} className="hint">drag to aim · drag the target</text>}

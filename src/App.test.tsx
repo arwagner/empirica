@@ -80,3 +80,28 @@ test('Go there to a station in another room opens it', () => {
   expect(screen.getByRole('heading', { name: 'Ramp & Carts' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Release' })).toBeInTheDocument()
 })
+
+test('the on-screen Menu button opens the menu', () => {
+  render(<App />)
+  fireEvent.click(screen.getByRole('button', { name: /^Menu/ }))
+  expect(screen.getByRole('dialog', { name: 'Lab menu' })).toBeInTheDocument()
+})
+
+describe('on a touch screen', () => {
+  beforeEach(() => {
+    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q === '(hover: none) and (pointer: coarse)', addEventListener() {}, removeEventListener() {} }))
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  test('the entry card offers the menu instead of mouse capture, and travel works by tapping', () => {
+    render(<App />)
+    expect(screen.queryByRole('button', { name: /enter the lab/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/release mouse/)).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Open the menu' }))
+    fireEvent.click(screen.getByRole('tab', { name: 'Stations' }))
+    fireEvent.click(within(screen.getByRole('region', { name: 'Biology Lab' })).getAllByRole('button', { name: 'Go there' })[0])
+    expect(screen.getByRole('heading', { name: 'Microscope' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Back to lab/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Notebook/ })).toBeInTheDocument()
+  })
+})

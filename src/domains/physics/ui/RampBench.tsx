@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import type { LabEvent } from '../../../core'
 import type { BenchProps } from '../../../ui/station/StationWorkspace'
 import { useLabSession } from '../../../ui/useLabSession'
+import { HitArea } from '../../../ui/HitArea'
+import { useHitRadius } from '../../../ui/touch'
 import type { PhysicsState } from '../engine'
 import { SURFACES, type RampState, type Surface } from '../rigs/ramp'
 import { PLANETS, type Planet } from '../world'
@@ -23,6 +25,7 @@ export function RampBench({ sandbox, apply }: BenchProps) {
   const s = state.rig.state as RampState
   const { log } = useLabSession()
   const svg = useRef<SVGSVGElement>(null)
+  const hitR = useHitRadius(svg, W)
   const [drag, setDrag] = useState<null | 'angle' | string>(null)
   const [trace, setTrace] = useState<{ t: number; x: number; v: number }[]>([])
   const [graph, setGraph] = useState<'x' | 'v'>('x')
@@ -105,6 +108,7 @@ export function RampBench({ sandbox, apply }: BenchProps) {
             return (
               <g key={g.id} className={`gate ${g.time !== null ? 'tripped' : ''}`} onPointerDown={(e) => { e.preventDefault(); setDrag(g.id) }}
                 role="slider" aria-label={`Light gate ${g.id}`} aria-valuenow={g.x} aria-valuemin={0.1} aria-valuemax={s.length}>
+                <HitArea cx={p.x + ox} cy={p.y + oy} r={hitR} />
                 <line x1={p.x} y1={p.y} x2={p.x + ox} y2={p.y + oy} className="post" />
                 <circle cx={p.x + ox} cy={p.y + oy} r="9" className="head" />
                 <text x={p.x + ox} y={p.y + oy - 16} className="gate-label">{g.id}</text>
@@ -136,8 +140,11 @@ export function RampBench({ sandbox, apply }: BenchProps) {
             <circle cx="-18" cy="-5" r="5" className="wheel" />
             <circle cx="18" cy="-5" r="5" className="wheel" />
           </g>
-          <circle cx={top.x} cy={top.y} r="11" className="handle" onPointerDown={(e) => { e.preventDefault(); setDrag('angle') }}
-            role="slider" aria-label="Ramp angle handle" aria-valuenow={s.angleDeg} aria-valuemin={0} aria-valuemax={60} />
+          <g onPointerDown={(e) => { e.preventDefault(); setDrag('angle') }}
+            role="slider" aria-label="Ramp angle handle" aria-valuenow={s.angleDeg} aria-valuemin={0} aria-valuemax={60}>
+            <HitArea cx={top.x} cy={top.y} r={hitR} />
+            <circle cx={top.x} cy={top.y} r="11" className="handle" />
+          </g>
           {!drag && !s.released && <text x={top.x - 18} y={top.y + 4} className="hint" textAnchor="end">drag to tilt ↕</text>}
         </svg>
       </div>

@@ -15,7 +15,7 @@ function niceTicks(min: number, max: number, count = 4) {
   return out
 }
 
-/** One measured quantity over session time. Line + markers, hover readout, table toggle. */
+/** One measured quantity over session time. Line + markers, hover (or tap) readout, table toggle. */
 export function SeriesChart({ series }: { series: Series }) {
   const [hover, setHover] = useState<number | null>(null)
   const [table, setTable] = useState(false)
@@ -96,8 +96,9 @@ export function SeriesChart({ series }: { series: Series }) {
             {pts.map((p, i) => (
               <circle key={i} className="dot" cx={x(p.t)} cy={y(p.value)} r={i === hover ? 5 : 4} />
             ))}
+            {/* A mouse reads by hovering; a finger reads by tapping (or sliding), and the reading stays until the next tap. */}
             <rect x={PAD.l} y={0} width={W - PAD.l - PAD.r} height={H} fill="transparent"
-              onPointerMove={onMove} onPointerLeave={() => setHover(null)} />
+              onPointerDown={onMove} onPointerMove={onMove} onPointerLeave={(e) => e.pointerType === 'mouse' && setHover(null)} />
           </svg>
           {h && (
             <div className="tip" style={{ left: `${(x(h.t) / W) * 100}%` }}>

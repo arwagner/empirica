@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import type { LabEvent } from '../../../core'
 import type { BenchProps } from '../../../ui/station/StationWorkspace'
 import { useLabSession } from '../../../ui/useLabSession'
+import { HitArea } from '../../../ui/HitArea'
+import { useHitRadius } from '../../../ui/touch'
 import type { PhysicsState } from '../engine'
 import { BUMPERS, GLIDER_W, type Bumper, type TrackState } from '../rigs/track'
 import { PLANETS, type Planet } from '../world'
@@ -22,6 +24,7 @@ export function TrackBench({ sandbox, apply }: BenchProps) {
   const s = state.rig.state as TrackState
   const { log } = useLabSession()
   const svg = useRef<SVGSVGElement>(null)
+  const hitR = useHitRadius(svg, W)
   const [drag, setDrag] = useState<null | { glider: 'A' | 'B'; what: 'pos' | 'push' }>(null)
   const [trace, setTrace] = useState<{ t: number; vA: number; vB: number }[]>([])
   const t0 = useRef(0)
@@ -98,6 +101,7 @@ export function TrackBench({ sandbox, apply }: BenchProps) {
               <g key={g.id}>
                 <g className="glider" onPointerDown={(e) => { e.preventDefault(); if (!s.launched && s.mode === 'push') setDrag({ glider: g.id, what: 'pos' }) }}
                   role="slider" aria-label={`Glider ${g.id} position`} aria-valuenow={g.x}>
+                  <HitArea cx={px(g.x)} cy={TRACK_Y - h / 2} r={hitR} />
                   <rect x={px(g.x) - w / 2} y={TRACK_Y - h} width={w} height={h} rx="4" fill={COLOR[g.id]} />
                   <text x={px(g.x)} y={TRACK_Y - h / 2 + 5} className="glider-label">{g.id} · {g.m} kg</text>
                   {s.bumper === 'sticky' && <rect x={px(g.x) + (g.id === 'A' ? w / 2 - 3 : -w / 2 - 3)} y={TRACK_Y - h + 6} width="6" height={h - 12} className="velcro" />}
@@ -105,6 +109,8 @@ export function TrackBench({ sandbox, apply }: BenchProps) {
                 </g>
                 {!s.launched && s.mode === 'push' && (
                   <g className="push" onPointerDown={(e) => { e.preventDefault(); setDrag({ glider: g.id, what: 'push' }) }} role="slider" aria-label={`Glider ${g.id} push`} aria-valuenow={push}>
+                    {/* Lifted so its bottom edge meets the glider's top: drawn over the glider, a centred hit area would take touches meant to move it. */}
+                    <HitArea cx={px(g.x) + push * 100} cy={TRACK_Y - h - 18 - Math.max(0, hitR - 18)} r={hitR} />
                     <line x1={px(g.x)} y1={TRACK_Y - h - 18} x2={px(g.x) + push * 100} y2={TRACK_Y - h - 18} stroke={COLOR[g.id]} />
                     <circle cx={px(g.x) + push * 100} cy={TRACK_Y - h - 18} r="8" fill={COLOR[g.id]} />
                     <text x={px(g.x) + push * 100} y={TRACK_Y - h - 32} className="scale">{push.toFixed(1)} m/s</text>
