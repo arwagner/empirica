@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto'
 import { z } from 'zod'
+import type { Draft } from '../../src/professor/wire'
 import { safeEqual } from './safeEqual'
 import { screenText } from './screen'
 
@@ -14,8 +15,8 @@ export const DraftSchema = z.object({
   measures: field(300),
   location: field(120),
   phone: field(400),
-})
-export type Draft = z.infer<typeof DraftSchema>
+}) satisfies z.ZodType<Draft>
+export type { Draft }
 
 /** The tool the professor drafts with. It only drafts: filing happens when the student presses Confirm. */
 export const DRAFT_TOOL = {
@@ -26,7 +27,7 @@ export const DRAFT_TOOL = {
   input_schema: {
     type: 'object' as const,
     additionalProperties: false,
-    required: ['equipment', 'question', 'measures', 'location', 'phone'],
+    required: Object.keys(DraftSchema.shape),
     properties: {
       equipment: { type: 'string', description: 'Name of the equipment, e.g. "Geiger counter".' },
       question: { type: 'string', description: "The student's question it would answer, in a sentence." },
