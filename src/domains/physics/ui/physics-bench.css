@@ -85,7 +85,7 @@
 .phys-bench .beam-h { stroke: var(--gate); stroke-width: 1.5; stroke-dasharray: 4 4; opacity: .7; }
 .phys-bench button.on-toggle { background: var(--ui-chip, #2f7d6d1a); border-color: var(--ui-accent, #2f7d6d); }
 /* Phones: the bench grows with its contents and the station scrolls. */
-@media (max-width: 760px), (max-height: 500px) {
+@media (max-width: 760px), (max-height: 500px) and (pointer: coarse) {
   .phys-bench { height: auto; }
   .phys-bench .stage { flex: none; min-height: 0; }
 }

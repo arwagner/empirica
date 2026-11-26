@@ -33,8 +33,8 @@
 .menu-button { position: absolute; top: 12px; right: 12px; z-index: 2; padding: 8px 16px; border: 0; border-radius: 999px; background: #1d2a2ee6; color: #f4efe4; font: 600 15px system-ui, sans-serif; cursor: pointer; box-shadow: 0 4px 16px #0003; }
 .menu-button kbd { background: #fff2; border-color: #fff4; color: #fff; }
 
-/* Phones, portrait or landscape: the station scrolls as one page, panels stack, nothing scrolls inside a fixed frame. */
-@media (max-width: 760px), (max-height: 500px) {
+/* Phones, portrait or landscape (a short window counts only on a touch screen, so a short desktop window keeps its layout): the station scrolls as one page, panels stack, nothing scrolls inside a fixed frame. */
+@media (max-width: 760px), (max-height: 500px) and (pointer: coarse) {
   .station { overflow-y: auto; overscroll-behavior: contain; }
   .station header { flex-wrap: wrap; gap: 8px 12px; padding: 10px 12px; }
   .station header > div:first-child { flex: 1 1 160px; min-width: 0; }
