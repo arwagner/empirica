@@ -24,12 +24,16 @@ export interface TouchPoint {
   t: number
 }
 
-/** What one pointer event asks the player to do. All zero / null when it asks nothing. */
-export interface TouchIntent {
+/** A walk relative to the view. */
+export interface Step {
   /** Metres to walk along the view direction (positive is forward). */
   forward: number
   /** Metres to step sideways (positive is right). */
   strafe: number
+}
+
+/** What one pointer event asks the player to do. All zero / null when it asks nothing. */
+export interface TouchIntent extends Step {
   /** Radians to add to yaw (positive turns left, as in three.js). */
   yaw: number
   /** Radians to add to pitch (positive looks up). */
@@ -126,7 +130,7 @@ export class TouchWalk {
  * (a drag is a distance, not a speed; capping it stops a long flick tunnelling through a wall).
  * Returns the step and what's left over for later frames.
  */
-export function takeStep(pending: { forward: number; strafe: number }, max: number) {
+export function takeStep(pending: Step, max: number): { step: Step; rest: Step } {
   const len = Math.hypot(pending.forward, pending.strafe)
   const k = len > max ? max / len : 1
   const step = { forward: pending.forward * k, strafe: pending.strafe * k }

@@ -2,7 +2,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { cameraLookQuaternion, stationView } from './camera'
-import { takeStep, toNdc, TouchWalk, type TouchPoint, type TouchIntent } from './touchWalk'
+import { takeStep, toNdc, TouchWalk, type Step, type TouchPoint, type TouchIntent } from './touchWalk'
 import type { Room, Spawn } from './types'
 
 /**
@@ -60,7 +60,7 @@ export function Player({ room, spawn, mode, stationId, onFocus, onActivate, onAr
   const ray = useRef(new THREE.Raycaster())
   const touchWalk = useRef(new TouchWalk())
   /** Touch walking waiting for the next frame (metres along / across the view), so collisions apply once per frame. */
-  const touchStep = useRef({ forward: 0, strafe: 0 })
+  const touchStep = useRef<Step>({ forward: 0, strafe: 0 })
   const modeRef = useRef(mode)
   const cb = useRef({ onFocus, onActivate, onArrived, onReveal })
   useLayoutEffect(() => {
