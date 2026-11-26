@@ -93,10 +93,19 @@ describe('on a touch screen', () => {
   })
   afterEach(() => vi.unstubAllGlobals())
 
-  test('the entry card offers the menu instead of mouse capture, and travel works by tapping', () => {
+  test('the entry card enters by a tap, not mouse capture, and shows touch controls', () => {
     render(<App />)
-    expect(screen.queryByRole('button', { name: /enter the lab/i })).not.toBeInTheDocument()
     expect(screen.queryByText(/release mouse/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Drag to walk/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Tap to enter the lab' }))
+    expect(screen.queryByRole('heading', { name: 'Empirica' })).not.toBeInTheDocument()
+    // Walking by touch keeps the Menu button: there's no M key.
+    fireEvent.click(screen.getByRole('button', { name: /^Menu/ }))
+    expect(screen.getByRole('dialog', { name: 'Lab menu' })).toBeInTheDocument()
+  })
+
+  test('the entry card still opens the menu, and travel works by tapping', () => {
+    render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Open the menu' }))
     fireEvent.click(screen.getByRole('tab', { name: 'Stations' }))
     fireEvent.click(within(screen.getByRole('region', { name: 'Biology Lab' })).getAllByRole('button', { name: 'Go there' })[0])

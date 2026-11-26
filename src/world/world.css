@@ -42,3 +42,6 @@
   .station-body, .workspace { flex: none; flex-direction: column; min-height: auto; }
   .bench-area { display: block; padding: 10px; overflow: visible; }
 }
+.card button.secondary { margin-left: 8px; background: transparent; color: #2f7d6d; box-shadow: inset 0 0 0 1.5px #2f7d6d; }
+/* Touch walking drags the world: the browser mustn't scroll or zoom the page under the finger. */
+.world canvas { touch-action: none; }

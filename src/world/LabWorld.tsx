@@ -2,7 +2,7 @@ import { Preload } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { useCallback, useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react'
 import { isTouch, useTouch } from '../ui/touch'
-import { labOverlay } from './overlay'
+import { labOverlay, returnMode } from './overlay'
 import { Player, type Mode } from './Player'
 import type { Building, Interactable, Spawn } from './types'
 import './world.css'
@@ -59,7 +59,7 @@ export function LabWorld({ building, renderStation, suspended = false, onMenu, r
       go('suspended')
       if (document.pointerLockElement) document.exitPointerLock()
     }
-    if (!suspended && m === 'suspended') go('ready')
+    if (!suspended && m === 'suspended') go(returnMode({ locked: false, touch: isTouch() }))
   }, [suspended, go])
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export function LabWorld({ building, renderStation, suspended = false, onMenu, r
   const leave = useCallback(() => {
     if (modeRef.current !== 'station') return
     go('flyingOut')
-    // Recapture the mouse so you keep walking. A touch screen has no mouse to capture: you land in the lab view with its Menu button.
+    // Recapture the mouse so you keep walking. A touch screen has no mouse to capture: you land walking by touch.
     if (!isTouch()) lock()
   }, [go])
 
@@ -150,7 +150,7 @@ export function LabWorld({ building, renderStation, suspended = false, onMenu, r
     if (modeRef.current === 'flyingIn') go('station')
     if (modeRef.current === 'flyingOut') {
       setStationId(null)
-      go(document.pointerLockElement ? 'walking' : 'ready')
+      go(returnMode({ locked: !!document.pointerLockElement, touch: isTouch() }))
     }
   }, [go])
 
@@ -166,7 +166,8 @@ export function LabWorld({ building, renderStation, suspended = false, onMenu, r
   const focused = room.interactables.find((i) => i.id === focusId)
   const station = room.interactables.find((i) => i.id === stationId)
   const overlay = labOverlay(mode, { touch, peek: peek !== null })
-  const enter = overlay.enterBy === 'lock' ? lock : undefined
+  // Touch has no mouse to capture: tapping the card just starts walking by touch.
+  const enter = overlay.enterBy === 'lock' ? lock : () => go('walking')
 
   return (
     <div className="world">
@@ -187,7 +188,15 @@ export function LabWorld({ building, renderStation, suspended = false, onMenu, r
       {mode === 'walking' && <div className={`crosshair ${focused ? 'on' : ''}`} />}
       {mode === 'walking' && focused && (
         <div className="prompt">
-          <kbd>E</kbd> {focused.kind === 'door' ? 'Open' : 'Use'} <b>{focused.name}</b>
+          {touch ? (
+            <>
+              Tap <b>{focused.name}</b> to {focused.kind === 'door' ? 'open it' : 'use it'}
+            </>
+          ) : (
+            <>
+              <kbd>E</kbd> {focused.kind === 'door' ? 'Open' : 'Use'} <b>{focused.name}</b>
+            </>
+          )}
         </div>
       )}
       {toast && <div className="toast">{toast}</div>}
@@ -218,8 +227,9 @@ export function LabWorld({ building, renderStation, suspended = false, onMenu, r
               </>
             ) : (
               <>
-                <p>Pick a station or an experiment from the menu to start.</p>
-                <button onClick={onMenu}>Open the menu</button>
+                <p>Drag to walk · twist two fingers to turn · slide two fingers to look up or down · tap a station or door to use it</p>
+                <button>{overlay.card === 'start' ? 'Tap to enter the lab' : 'Tap to resume'}</button>
+                <button className="secondary" onClick={(e) => { e.stopPropagation(); onMenu?.() }}>Open the menu</button>
               </>
             )}
           </div>
