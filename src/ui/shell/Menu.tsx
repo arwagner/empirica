@@ -1,15 +1,17 @@
 import type { Experiment } from '../../core'
 import type { Interactable } from '../../world/types'
 import { NotebookPanel } from '../notebook/NotebookPanel'
+import { ProfessorPanel } from '../professor/ProfessorPanel'
 import { useLabSession } from '../useLabSession'
 import { Catalog } from './Catalog'
 import { LevelToggle } from './LevelToggle'
 
-export type MenuTab = 'experiments' | 'stations' | 'notebook'
+export type MenuTab = 'experiments' | 'stations' | 'notebook' | 'professor'
 const TABS: { id: MenuTab; label: string; key: string }[] = [
   { id: 'experiments', label: 'Experiments', key: '' },
   { id: 'stations', label: 'Stations', key: '' },
   { id: 'notebook', label: 'Notebook', key: 'N' },
+  { id: 'professor', label: 'Professor', key: '' },
 ]
 
 interface Props {
@@ -21,9 +23,11 @@ interface Props {
   stations: (Interactable & { room: string })[]
   onStartExperiment: (e: Experiment) => void
   onGoToStation: (id: string) => void
+  /** The station the student is at, for the professor. */
+  here?: { id: string; name: string }
 }
 
-export function Menu({ tab, onTab, onClose, experiments, domains, stations, onStartExperiment, onGoToStation }: Props) {
+export function Menu({ tab, onTab, onClose, experiments, domains, stations, onStartExperiment, onGoToStation, here }: Props) {
   const { notebook, note } = useLabSession()
   return (
     <div className="menu-veil" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -65,6 +69,7 @@ export function Menu({ tab, onTab, onClose, experiments, domains, stations, onSt
             </div>
           )}
           {tab === 'notebook' && <NotebookPanel notebook={notebook} onAddNote={note} />}
+          {tab === 'professor' && <ProfessorPanel station={here} />}
         </div>
       </div>
     </div>

@@ -7,10 +7,11 @@ interface Props {
   station: Interactable
   onLeave: () => void
   onNotebook: () => void
+  onProfessor: () => void
   children: ReactNode
 }
 
-export function StationFrame({ station, onLeave, onNotebook, children }: Props) {
+export function StationFrame({ station, onLeave, onNotebook, onProfessor, children }: Props) {
   return (
     <>
       <header>
@@ -20,6 +21,7 @@ export function StationFrame({ station, onLeave, onNotebook, children }: Props) 
         </div>
         <div className="station-actions">
           <LevelToggle />
+          <button onClick={onProfessor}>Ask the professor</button>
           <button onClick={onNotebook}>
             Notebook <kbd>N</kbd>
           </button>

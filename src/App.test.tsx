@@ -81,6 +81,21 @@ test('Go there to a station in another room opens it', () => {
   expect(screen.getByRole('button', { name: 'Release' })).toBeInTheDocument()
 })
 
+test('Ask the professor in a station header opens the Professor tab, which knows the station', async () => {
+  vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('offline'))))
+  render(<App />)
+  key('KeyM')
+  fireEvent.click(screen.getByRole('tab', { name: 'Stations' }))
+  fireEvent.click(within(screen.getByRole('region', { name: 'Physics Hall' })).getAllByRole('button', { name: 'Go there' })[0])
+  fireEvent.click(screen.getByRole('button', { name: 'Ask the professor' }))
+  expect(screen.getByRole('tab', { name: 'Professor', selected: true })).toBeInTheDocument()
+  const chat = screen.getByRole('region', { name: 'Professor chat' })
+  expect(chat).toHaveTextContent('At the Ramp & Carts.')
+  // With the API down, the lab still works and the professor says it's unavailable.
+  expect(await within(chat).findByRole('status')).toHaveTextContent(/unavailable/)
+  vi.unstubAllGlobals()
+})
+
 test('the on-screen Menu button opens the menu', () => {
   render(<App />)
   fireEvent.click(screen.getByRole('button', { name: /^Menu/ }))
