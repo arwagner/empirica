@@ -23,6 +23,8 @@
 .notebook .line { fill: none; stroke: var(--nb-accent); stroke-width: 2; stroke-linejoin: round; }
 .notebook .dot { fill: var(--nb-accent); stroke: var(--nb-bg); stroke-width: 2; }
 .notebook .crosshair { stroke: var(--nb-muted); stroke-dasharray: 2 3; }
+/* A finger slides sideways to read along the chart; up and down still scrolls the notebook. */
+.notebook .plot svg { touch-action: pan-y; }
 .notebook .tip { position: absolute; top: -6px; transform: translate(-50%, -100%); padding: 3px 8px; border-radius: 6px; background: var(--nb-fg); color: var(--nb-bg); font-size: 12px; white-space: nowrap; pointer-events: none; }
 .notebook table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .notebook th, .notebook td { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--nb-line); }
