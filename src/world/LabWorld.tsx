@@ -25,11 +25,13 @@ interface Props {
   suspended?: boolean
   /** Open the lab menu: the on-screen Menu button, and the way in on touch screens. */
   onMenu?: () => void
+  /** The station the player is at (or flying in to), or null once they leave it. */
+  onStation?: (stationId: string | null) => void
   ref?: Ref<LabWorldHandle>
 }
 
 /** The walkable 3D lab with fly-in to 2D station workspaces. */
-export function LabWorld({ building, renderStation, suspended = false, onMenu, ref }: Props) {
+export function LabWorld({ building, renderStation, suspended = false, onMenu, onStation, ref }: Props) {
   const touch = useTouch()
   // Dev aid: ?room=<id> starts in that room.
   const [roomId, setRoomId] = useState(() => {
@@ -51,6 +53,10 @@ export function LabWorld({ building, renderStation, suspended = false, onMenu, r
     setMode(m)
   }, [])
   const suspendedRef = useRef(suspended)
+  const atStation = mode === 'station' || mode === 'flyingIn' ? stationId : null
+  useEffect(() => {
+    onStation?.(atStation)
+  }, [atStation, onStation])
 
   useEffect(() => {
     suspendedRef.current = suspended

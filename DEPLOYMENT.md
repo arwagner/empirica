@@ -29,3 +29,11 @@ https://empirica.vawagners.cloud/ serves the `index.html` just built. `DEPLOY_US
 `DEPLOY_PATH`, `DEPLOY_URL`, `DEPLOY_SSH_KEY` override the defaults (see the script header).
 
 Keep the trailing slash on `dist/` if you ever rsync by hand, or the site answers 404.
+
+## The professor's API (not deployed yet)
+
+`server/` holds `empirica-api`, the AI professor's backend (see `server/README.md`). Until it runs on the VPS,
+the site's Professor tab says the professor is unavailable and everything else works as before. Running it
+needs a millwright change: an `empirica-api` service in `compose.yaml` built from `server/Dockerfile`, Caddy
+sending `empirica.vawagners.cloud/api/*` to it, secrets in `/srv/secrets/empirica.env`, and a way for this
+workflow to ship the container (the current deploy key can only rsync the web root).

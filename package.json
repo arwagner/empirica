@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:server": "npm run build:server && node --env-file-if-exists=server/.env dist-server/main.mjs",
     "build": "tsc -b && vite build",
+    "build:server": "vite build --config server/vite.config.ts",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
@@ -14,6 +16,7 @@
     "deploy": "npm run build && node scripts/deploy.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.2",
     "react": "^19.3.1",
